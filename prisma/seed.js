@@ -44,7 +44,7 @@ async function main() {
   await prisma.systemSettings.create({
     data: {
       key: 'GEMINI_API_KEY',
-      value: 'AIzaSyDHuLfJHzVB9Zryc69ciNJvSQ4OM9vz_eU'
+      value: ''
     }
   });
   console.log('✅ Yangi Gemini API Key saqlandi.');
