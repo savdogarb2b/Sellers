@@ -42,6 +42,7 @@ export default function LandingPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-dark)', color: 'var(--text-primary)', overflowX: 'hidden', position: 'relative' }}>
+      <main>
       
       {/* Background Animated Spheres */}
       <div className="landing-glow-sphere" style={{ top: '-10%', left: '-10%' }} />
@@ -49,7 +50,7 @@ export default function LandingPage() {
       <div className="landing-glow-sphere" style={{ bottom: '10%', left: '20%', filter: 'blur(100px)' }} />
 
       {/* Navigation */}
-      <nav style={{ 
+      <nav aria-label="Asosiy navigatsiya" style={{ 
         position: 'fixed', top: 0, left: 0, right: 0, height: '70px', 
         background: scrolled ? 'var(--bg-navbar)' : 'transparent',
         backdropFilter: scrolled ? 'blur(20px)' : 'none',
@@ -59,16 +60,16 @@ export default function LandingPage() {
         transition: 'all 0.3s ease'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div className="brand-logo" style={{ background: 'linear-gradient(135deg, var(--primary-400), var(--primary-600))', color: '#000' }}>S</div>
-          <span style={{ fontSize: '18px', fontWeight: 900, letterSpacing: '2px', color: 'var(--text-primary)', textTransform: 'uppercase' }}>Sales<span style={{ color: 'var(--primary-500)' }}>CRM</span></span>
+          <div className="brand-logo" style={{ background: 'linear-gradient(135deg, var(--primary-400), var(--primary-600))', color: '#000' }} aria-hidden="true">S</div>
+          <span style={{ fontSize: '18px', fontWeight: 900, letterSpacing: '2px', color: 'var(--text-primary)', textTransform: 'uppercase' }}>Nur<span style={{ color: 'var(--primary-500)' }}>Seles</span></span>
         </div>
         
         <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }} className="desktop-menu">
-          <a href="#home" style={navLinkStyle} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}>Bosh Sahifa</a>
-          <a href="#features" style={navLinkStyle} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}>Xususiyatlar</a>
-          <a href="#how-it-works" style={navLinkStyle} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}>Qanday Ishlaydi</a>
-          <a href="#benefits" style={navLinkStyle} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}>Afzalliklar</a>
-          <a href="#contact" style={navLinkStyle} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}>Aloqa</a>
+          <a href="#home" title="Bosh sahifaga o'tish" style={navLinkStyle} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}>Bosh Sahifa</a>
+          <a href="#features" title="CRM tizimi xususiyatlari" style={navLinkStyle} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}>Xususiyatlar</a>
+          <a href="#how-it-works" title="Tizim qanday ishlaydi" style={navLinkStyle} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}>Qanday Ishlaydi</a>
+          <a href="#benefits" title="CRM afzalliklari" style={navLinkStyle} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}>Afzalliklar</a>
+          <a href="#contact" title="Biz bilan bog'lanish" style={navLinkStyle} onMouseEnter={(e) => e.target.style.color = 'white'} onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}>Aloqa</a>
         </div>
 
         <div>
@@ -79,7 +80,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <header id="home" style={{ 
+      <header id="home" role="banner" aria-label="Bosh sahifa" style={{ 
         minHeight: '100vh', display: 'flex', flexDirection: 'column', 
         alignItems: 'center', justifyContent: 'center', textAlign: 'center',
         padding: '120px 5% 60px 5%', position: 'relative'
@@ -92,7 +93,7 @@ export default function LandingPage() {
           fontSize: 'clamp(40px, 6vw, 72px)', fontWeight: 950, lineHeight: 1.1, 
           letterSpacing: '-1px', marginBottom: '24px', maxWidth: '1000px' 
         }}>
-          Sotuvlarni Oddiy Daftardan Emas, <br/>
+          NurSeles — Sotuvlarni Oddiy Daftardan Emas, <br/>
           <span style={{ background: 'linear-gradient(90deg, var(--primary-400), var(--accent-teal), var(--accent-blue))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'inline-block' }}>Sun’iy Intellekt Bilan Boshqaring</span>
         </h1>
         
@@ -142,10 +143,10 @@ export default function LandingPage() {
       </header>
 
       {/* Features Section */}
-      <section id="features" style={{ padding: '100px 5%', position: 'relative' }}>
+      <section id="features" aria-labelledby="features-title" style={{ padding: '100px 5%', position: 'relative' }}>
         <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-          <h2 style={{ fontSize: '13px', color: 'var(--primary-500)', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 800, marginBottom: '16px' }}>Bizning Ustunligimiz</h2>
-          <h3 style={{ fontSize: 'clamp(32px, 4vw, 42px)', fontWeight: 900, marginBottom: '20px' }}>Nima Uchun SalesCRM?</h3>
+          <span style={{ fontSize: '13px', color: 'var(--primary-500)', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 800, marginBottom: '16px', display: 'block' }}>Bizning Ustunligimiz</span>
+          <h2 id="features-title" style={{ fontSize: 'clamp(32px, 4vw, 42px)', fontWeight: 900, marginBottom: '20px' }}>Nima Uchun NurSeles CRM?</h2>
           <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto' }}>Bozordagi murakkab va eskirgan tizimlarni unuting. Eng Premium dark-rejimi, va inqilobiy yondashuv bu yerda.</p>
         </div>
 
@@ -184,15 +185,15 @@ export default function LandingPage() {
       </section>
 
       {/* Deep Dive / Benefits Section */}
-      <section id="benefits" style={{ padding: '100px 5%', background: 'rgba(255,255,255,0.02)', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
+      <section id="benefits" aria-labelledby="benefits-title" style={{ padding: '100px 5%', background: 'rgba(255,255,255,0.02)', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
          <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: '60px', alignItems: 'center' }}>
             <div style={{ flex: '1 1 500px' }}>
-               <h3 style={{ fontSize: 'clamp(28px, 3vw, 36px)', fontWeight: 900, marginBottom: '24px', lineHeight: 1.2 }}>Raqqobatda Orqada Qolmang, Ma’lumotlarni Boshqaring.</h3>
+               <h2 id="benefits-title" style={{ fontSize: 'clamp(28px, 3vw, 36px)', fontWeight: 900, marginBottom: '24px', lineHeight: 1.2 }}>Raqqobatda Orqada Qolmang, Ma’lumotlarni Boshqaring.</h2>
                <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: '20px', fontSize: '16px' }}>
                  Katta korxonalarning sirli quroli nima ekanini bilasizmi? Ular qog’ozda hisob-kitob qilishmaydi. Ular raqamlarni aniq vaqtda (Real-Time) ko’rib qaror qabul qilishadi. 
                </p>
                <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: '32px', fontSize: '16px' }}>
-                 SalesCRM sizga menejerlarning qayerda xato qilayotganini, kunlik yo’qolgan summalar hajmini bir tugma orqali ilg’ab olish qulayligini yaratadi. Shunchaki logindan kiring va qolgan og’ir hisoblarni AI siz uchun olib boradi!
+                 NurSeles sizga menejerlarning qayerda xato qilayotganini, kunlik yo’qolgan summalar hajmini bir tugma orqali ilg’ab olish qulayligini yaratadi. Shunchaki logindan kiring va qolgan og’ir hisoblarni AI siz uchun olib boradi!
                </p>
                
                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -215,10 +216,10 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" style={{ padding: '100px 5%' }}>
+      <section id="how-it-works" aria-labelledby="how-it-works-title" style={{ padding: '100px 5%' }}>
         <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-          <h2 style={{ fontSize: '13px', color: 'var(--accent-teal)', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 800, marginBottom: '16px' }}>Ishlash Jarayoni</h2>
-          <h3 style={{ fontSize: 'clamp(32px, 4vw, 42px)', fontWeight: 900 }}>Barchasi 3 qadamda Ishlaydi</h3>
+          <span style={{ fontSize: '13px', color: 'var(--accent-teal)', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 800, marginBottom: '16px', display: 'block' }}>Ishlash Jarayoni</span>
+          <h2 id="how-it-works-title" style={{ fontSize: 'clamp(32px, 4vw, 42px)', fontWeight: 900 }}>Barchasi 3 Qadamda Ishlaydi</h2>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '40px', maxWidth: '800px', margin: '0 auto' }}>
@@ -229,11 +230,11 @@ export default function LandingPage() {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" style={{ padding: '100px 5%', position: 'relative' }}>
+      <section id="contact" aria-labelledby="contact-title" style={{ padding: '100px 5%', position: 'relative' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '60px' }}>
              <h2 style={{ fontSize: '13px', color: 'var(--primary-400)', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 800, marginBottom: '16px' }}>Bog’lanish</h2>
-             <h3 style={{ fontSize: 'clamp(32px, 4vw, 42px)', fontWeight: 900, marginBottom: '20px' }}>Biz Bilan Aloqaga Chiqing</h3>
+             <h2 id="contact-title" style={{ fontSize: 'clamp(32px, 4vw, 42px)', fontWeight: 900, marginBottom: '20px' }}>Biz Bilan Aloqaga Chiqing</h2>
              <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto' }}>Sizning korxonangiz uchun individual narx va sozlamalar haqida gaplashamiz. Tizimga ulanish bepul sinov bilan boshlanadi.</p>
           </div>
 
@@ -281,13 +282,14 @@ export default function LandingPage() {
         </div>
       </section>
 
+      </main>
       {/* Footer */}
-      <footer style={{ padding: '60px 5%', borderTop: '1px solid var(--border-color)', background: '#050505' }}>
+      <footer role="contentinfo" style={{ padding: '60px 5%', borderTop: '1px solid var(--border-color)', background: '#050505' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '40px' }}>
            <div style={{ maxWidth: '300px' }}>
              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                <div className="brand-logo" style={{ width: 32, height: 32, fontSize: '14px', background: 'var(--primary-500)', color: '#000' }}>S</div>
-                <span style={{ fontSize: '16px', fontWeight: 900, letterSpacing: '1.5px', color: 'var(--text-primary)' }}>SALESCRM</span>
+                <div className="brand-logo" style={{ width: 32, height: 32, fontSize: '14px', background: 'var(--primary-500)', color: '#000' }} aria-hidden="true">N</div>
+                <span style={{ fontSize: '16px', fontWeight: 900, letterSpacing: '1.5px', color: 'var(--text-primary)' }}>NURSELES</span>
              </div>
              <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: 1.6 }}>Eng so’nggi va tezyurar texnologiyalar ustiga qurilgan, Premium darajadagi boshqaruv markazi va CRM tizimi.</p>
            </div>
@@ -312,7 +314,7 @@ export default function LandingPage() {
         </div>
         
         <div style={{ maxWidth: '1200px', margin: '40px auto 0 auto', paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>
-          &copy; {new Date().getFullYear()} SalesCRM SaaS Platform. Barcha huquqlar himoyalangan. Tizim AI tomonidan quvvatlanadi.
+          &copy; {new Date().getFullYear()} NurSeles CRM. Barcha huquqlar himoyalangan. O'zbekistonda ishlab chiqilgan.
         </div>
       </footer>
       
