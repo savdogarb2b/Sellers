@@ -86,6 +86,12 @@ export default function SuperadminAIPage() {
     setSending(false);
   };
 
+  const clearHistory = async () => {
+    if (!confirm('Chat tarixini tozalashni xohlaysizmi?')) return;
+    await fetch('/api/superadmin/ai', { method: 'DELETE' });
+    setMessages([]);
+  };
+
   const ChartRenderer = ({ jsonStr }) => {
     try {
       const config = JSON.parse(jsonStr);
