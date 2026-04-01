@@ -13,6 +13,14 @@ async function main() {
   });
   console.log('✅ Superadmin:', superadmin.email);
 
+  // Set Gemini API Key
+  await prisma.systemSettings.upsert({
+    where: { key: 'GEMINI_API_KEY' },
+    update: {},
+    create: { key: 'GEMINI_API_KEY', value: 'AIzaSyC0Z4c0Ucngfq3dI60RLtFhiR4vhT7KYjg' },
+  });
+  console.log('✅ Gemini API Key saqlandi');
+
   const org = await prisma.organization.create({
     data: { name: 'Demo Kompaniya', address: 'Toshkent, Chilonzor tumani', phone: '+998901234567' },
   });
