@@ -23,20 +23,19 @@ export async function POST(request) {
 
   const { message } = await request.json();
   const userId = session.user.id;
-  const orgId = session.user.organizationId;
 
   // Save user message
   await prisma.chatMessage.create({
     data: { userId, role: 'user', content: message },
   });
 
-  // Check for Gemini API Key
+  // Get API key
   const setting = await prisma.systemSettings.findUnique({ where: { key: 'GEMINI_API_KEY' } });
   if (!setting?.value) {
     return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
   }
 
-  // Set up streaming
+  // Robust Stream Parsing
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
@@ -49,9 +48,8 @@ export async function POST(request) {
             body: JSON.stringify({
               contents: [{
                 parts: [{
-                  text: `Sen SalesCRM tizimi yordamchisiz.
-FAQAT O'ZBEK TILIDA javob ber. Markdown formatidan foydalan.
-Foydalanuvchi savoli: ${message}`
+                  text: `Sen SalesCRM yordamchisiz. O'zbek tilida qisqa va aniq javob ber. Markdown formatidan foydalan.
+USER: ${message}`
                 }]
               }],
               generationConfig: { temperature: 0.7, maxOutputTokens: 1500 },
@@ -59,42 +57,43 @@ Foydalanuvchi savoli: ${message}`
           }
         );
 
-        if (!response.ok) {
-          throw new Error('Gemini API error');
-        }
+        if (!response.ok) throw new Error('Gemini API error');
 
         const reader = response.body.getReader();
-        let fullContent = '';
+        const decoder = new TextDecoder();
+        let fullText = '';
+        let jsonBuffer = '';
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = new TextDecoder().decode(value);
-          const lines = chunk.split('\n');
-
-          for (const line of lines) {
-            if (line.trim().startsWith('{') || line.trim().startsWith('[')) {
-              try {
-                const jsonStr = line.trim().replace(/^\[|,|\]$/g, '');
-                if (!jsonStr) continue;
-                
-                const data = JSON.parse(jsonStr);
-                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (text) {
-                  fullContent += text;
-                  controller.enqueue(encoder.encode(text));
-                }
-              } catch (e) {
-              }
-            }
+          jsonBuffer += decoder.decode(value, { stream: true });
+          
+          let match;
+          const textRegex = /"text":\s*"((?:[^"\\]|\\.)*)"/g;
+          let lastIndex = 0;
+          
+          while ((match = textRegex.exec(jsonBuffer)) !== null) {
+            const foundText = match[1]
+              .replace(/\\n/g, '\n')
+              .replace(/\\"/g, '"')
+              .replace(/\\\\/g, '\\');
+              
+            fullText += foundText;
+            controller.enqueue(encoder.encode(foundText));
+            lastIndex = textRegex.lastIndex;
           }
+          
+          jsonBuffer = jsonBuffer.substring(lastIndex);
         }
 
-        // Save AI message once completed
-        await prisma.chatMessage.create({
-          data: { userId, role: 'assistant', content: fullContent },
-        });
+        // Save AI message
+        if (fullText) {
+          await prisma.chatMessage.create({
+            data: { userId, role: 'assistant', content: fullText },
+          });
+        }
 
         controller.close();
       } catch (error) {
@@ -107,9 +106,8 @@ Foydalanuvchi savoli: ${message}`
 
   return new Response(stream, {
     headers: {
-      'Content-Type': 'text/event-stream',
+      'Content-Type': 'text/plain; charset=utf-8',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
     }
   });
 }

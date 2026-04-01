@@ -1,128 +1,144 @@
 'use client';
+
 import { useState, useEffect, useRef } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Send, Trash2, Bot, User, Sparkles } from 'lucide-react';
 
 export default function EmployeeChatPage() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
-  const bottomRef = useRef(null);
+  const [loading, setLoading] = useState(true);
+  const chatRef = useRef(null);
 
-  useEffect(() => { fetch('/api/chat').then(r => r.json()).then(setMessages); }, []);
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { if (chatRef.current) { chatRef.current.scrollTop = chatRef.current.scrollHeight; } }, [messages]);
 
-  const sendMessage = async () => {
-    if (!input.trim() || sending) return;
-    const msg = input.trim();
-    setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: msg, createdAt: new Date() }]);
-    setSending(true);
-    
+  const fetchData = async () => {
     try {
-      const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg }) });
-      const data = await res.json();
-      setMessages(prev => [...prev, data]);
-    } catch (e) {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Xatolik yuz berdi. Qayta urinib ko\'ring.' }]);
+      const res = await fetch('/api/chat');
+      const msgs = await res.json();
+      setMessages(Array.isArray(msgs) ? msgs : []);
+    } catch (e) {}
+    setLoading(false);
+  };
+
+  const handleSend = async (e) => {
+    if (e) e.preventDefault();
+    if (!input.trim() || sending) return;
+
+    const userMsg = input.trim();
+    setInput('');
+    
+    setMessages(prev => [...prev, { role: 'user', content: userMsg, createdAt: new Date() }]);
+    
+    const aiMsgId = Date.now().toString();
+    setMessages(prev => [...prev, { id: aiMsgId, role: 'assistant', content: '', createdAt: new Date() }]);
+    
+    setSending(true);
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMsg }),
+      });
+
+      if (!res.ok) throw new Error('Stream error');
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedContent = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        accumulatedContent += chunk;
+
+        setMessages(prev => prev.map(m => 
+          m.id === aiMsgId ? { ...m, content: accumulatedContent } : m
+        ));
+      }
+    } catch (err) {
+      setMessages(prev => prev.map(m => 
+        m.id === aiMsgId ? { ...m, content: 'Xatolik yuz berdi. Qayta urinib ko\'ring.' } : m
+      ));
     }
     setSending(false);
+  };
+
+  const clearHistory = async () => {
+    if (!confirm('Chat tarixini tozalashni xohlaysizmi?')) return;
+    await fetch('/api/chat', { method: 'DELETE' });
+    setMessages([]);
   };
 
   return (
     <div className="app-layout">
       <Sidebar />
       <Navbar />
-      <main className="main-content" style={{ padding: 0 }}>
-        <div style={{ height: 'calc(100vh - var(--navbar-height))', display: 'flex', flexDirection: 'column', gap: '0' }}>
-          
-          {/* Header */}
-          <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: '12px 24px',
-            background: 'var(--bg-card)',
-            borderBottom: '1px solid var(--border-color)',
-            flexShrink: 0
-          }}>
+      <main className="main-content" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--navbar-height))', padding: 0 }}>
+        
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: 32, height: 32, borderRadius: '10px', background: 'var(--primary-500)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000' }}><Bot size={18} /></div>
             <div>
-              <div style={{ fontSize: '16px', fontWeight: 950, textTransform: 'uppercase', letterSpacing: '2px' }}>AI Yordamchi</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '4px', fontWeight: 700 }}>Shaxsiy maslahatchi</div>
-            </div>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <button className="btn btn-secondary" onClick={() => setMessages([])} style={{ fontSize: '9px', fontWeight: 900, padding: '10px 16px' }}>
-                TOZALASH
-              </button>
+              <div style={{ fontSize: '15px', fontWeight: 950, letterSpacing: '0.5px' }}>AI YORDAMCHI</div>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Shaxsiy maslahatchi</div>
             </div>
           </div>
+          <button className="btn btn-secondary" onClick={clearHistory} style={{ fontSize: '9px', fontWeight: 950, padding: '8px 12px', color: '#ef4444', background: 'rgba(239, 68, 68, 0.05)' }}>
+            <Trash2 size={12} style={{ marginRight: '6px' }} /> TOZALASH
+          </button>
+        </div>
 
-          {/* Messages */}
-          <div style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '20px 24px',
-            background: 'var(--bg-deeper)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-          }}>
-            {messages.length === 0 && (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ fontSize: '18px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>AI STRATEGIK YORDAMCHI</div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>Menga savol bering va men sizga sotuvda yordam beraman.</div>
-              </div>
-            )}
-            {messages.map((m, i) => (
-              <div key={i} className={`chat-message ${m.role}`} style={{ animation: 'fadeIn 0.3s ease forwards' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', maxWidth: '75%', marginLeft: m.role === 'user' ? 'auto' : '0' }}>
-                  <div style={{ fontSize: '10px', color: 'var(--text-ghost)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '6px', textAlign: m.role === 'user' ? 'right' : 'left', letterSpacing: '0.5px' }}>
-                    {m.role === 'user' ? 'SIZ' : 'AI YORDAMCHI'}
+        {/* Chat Area */}
+        <div ref={chatRef} style={{ flex: 1, overflowY: 'auto', padding: '30px 40px', background: 'var(--bg-deeper)', display: 'flex', flexDirection: 'column', gap: '20px', minHeight: 0 }}>
+          {loading ? <div className="loading-container"><div className="loading-spinner" /></div> : messages.length === 0 ? (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <Sparkles size={40} style={{ color: 'var(--primary-500)', marginBottom: '16px' }} />
+              <div style={{ fontSize: '18px', fontWeight: 950, textAlign: 'center' }}>AI STRATEGIK YORDAMCHI</div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '8px', textAlign: 'center' }}>Menga savol bering va men sizga sotuvda yordam beraman.</p>
+            </div>
+          ) : (
+            <div style={{ width: '100%', maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {messages.map((m, i) => (
+                <div key={i} style={{ display: 'flex', gap: '14px', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
+                  {m.role === 'assistant' && <div style={{ width: 28, height: 28, borderRadius: '8px', background: 'var(--primary-500)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', flexShrink: 0, marginTop: '4px' }}><Bot size={14} /></div>}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                    <div style={{ fontSize: '9px', fontWeight: 900, color: 'var(--text-ghost)', textTransform: 'uppercase', marginBottom: '4px' }}>{m.role === 'user' ? 'SIZ' : 'AI SYSTEM'}</div>
+                    <div style={{ 
+                      padding: '12px 16px', borderRadius: '14px',
+                      background: m.role === 'user' ? 'var(--primary-500)' : 'var(--bg-card)',
+                      color: m.role === 'user' ? '#000' : 'var(--text-primary)',
+                      border: '1px solid var(--border-color)', fontSize: '13px', lineHeight: '1.6', fontWeight: 500
+                    }}>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                    </div>
                   </div>
-                  <div style={{ 
-                    whiteSpace: 'pre-wrap',
-                    padding: '12px 14px',
-                    borderRadius: m.role === 'user' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
-                    background: m.role === 'user' ? 'var(--primary-ghost)' : 'rgba(255,255,255,0.03)',
-                    color: m.role === 'user' ? 'var(--text-primary)' : 'var(--text-primary)',
-                    border: m.role === 'assistant' ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(124, 58, 237, 0.15)',
-                    fontWeight: 500,
-                    fontSize: '11.5px',
-                    lineHeight: '1.6',
-                  }}>{m.content}</div>
                 </div>
-              </div>
-            ))}
-            {sending && (
-              <div className="chat-message assistant">
-                <div style={{ display: 'flex', flexDirection: 'column', maxWidth: '75%' }}>
-                   <div style={{ fontSize: '9px', color: 'var(--text-ghost)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.5px' }}>AI YORDAMCHI</div>
-                   <div style={{ padding: '12px 16px', borderRadius: '12px 12px 12px 4px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                     <div className="loading-spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }} />
-                   </div>
-                </div>
-              </div>
-            )}
-            <div ref={bottomRef} />
-          </div>
-
-          {/* Input */}
-          <form style={{ flexShrink: 0, padding: '12px 24px', background: 'var(--bg-card)', borderTop: '1px solid var(--border-color)' }}>
-            <div className="card glass-panel" style={{ display: 'flex', gap: '10px', alignItems: 'center', padding: '4px 12px', marginBottom: 0, borderRadius: '14px' }}>
-              <input
-                type="text"
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); sendMessage(); } }}
-                placeholder="Xabar yozish..."
-                style={{
-                  flex: 1, background: 'transparent', border: 'none', color: 'white',
-                  fontSize: '13px', fontFamily: 'Inter, sans-serif', fontWeight: 500, outline: 'none',
-                  padding: '10px 0',
-                }}
-              />
-              <button type="button" className="btn btn-primary" onClick={sendMessage} disabled={sending} style={{ fontSize: '10px', fontWeight: 900, padding: '8px 16px', borderRadius: '10px' }}>
-                YUBORISH
-              </button>
+              ))}
             </div>
+          )}
+        </div>
+
+        {/* Input */}
+        <div style={{ padding: '16px 40px', background: 'var(--bg-card)', borderTop: '1px solid var(--border-color)', flexShrink: 0 }}>
+          <form onSubmit={handleSend} style={{ maxWidth: '1000px', margin: '0 auto', position: 'relative' }}>
+            <input
+              type="text" value={input} onChange={e => setInput(e.target.value)} disabled={sending}
+              placeholder="Xabar yozish..."
+              style={{ width: '100%', padding: '14px 50px 14px 20px', background: 'var(--bg-deeper)', border: '1px solid var(--border-color)', borderRadius: '12px', color: 'white', fontSize: '13px', outline: 'none' }}
+            />
+            <button type="submit" disabled={sending || !input.trim()} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '34px', height: '34px', borderRadius: '10px', background: 'var(--primary-500)', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none' }}>
+              <Send size={16} />
+            </button>
           </form>
         </div>
       </main>
