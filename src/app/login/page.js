@@ -169,25 +169,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Demo Accounts List */}
-          <div className="animate-slide-up delay-500" style={{ marginTop: '24px', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-            <p style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '12px', textAlign: 'center' }}>SaaS Demo Akkauntlar</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '6px' }}>
-                 <span style={{ fontWeight: 800 }}>SUPERADMIN</span>
-                 <code style={{ color: 'var(--primary-400)', fontWeight: 800 }}>admin@salescrm.uz</code>
-              </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '6px' }}>
-                 <span style={{ fontWeight: 800 }}>ADMIN</span>
-                 <code style={{ color: 'var(--primary-400)', fontWeight: 800 }}>admin@demo.uz</code>
-              </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
-                 <span style={{ fontWeight: 800 }}>USER</span>
-                 <code style={{ color: 'var(--primary-400)', fontWeight: 800 }}>xodim@demo.uz</code>
-              </div>
-            </div>
-            <div style={{ marginTop: '12px', fontSize: '10px', color: 'var(--text-muted)', textAlign: 'center', fontWeight: 600 }}>Parol barchasida: <span style={{ color: 'var(--primary-500)', fontWeight: 800 }}>123456</span></div>
-          </div>
 
         </div>
       </div>
