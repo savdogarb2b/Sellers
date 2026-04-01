@@ -1,0 +1,229 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id               String   @id @default(cuid())
+  name             String
+  address          String?
+  phone            String?
+  description      String?
+  status           String   @default("ACTIVE") // ACTIVE, FROZEN, DELETED
+  frozenAt         DateTime?
+  frozenReason     String?
+  maxEmployees     Int      @default(50)
+  subscriptionPlan String   @default("BASIC") // FREE, BASIC, PREMIUM
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  users          User[]
+  penalties      Penalty[]
+  bonuses        Bonus[]
+  funnelStages   FunnelStage[]
+  salesStrategies SalesStrategy[]
+}
+
+model SystemSettings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  password       String
+  name           String
+  role           String   @default("EMPLOYEE") // SUPERADMIN, ADMIN, EMPLOYEE
+  organizationId String?
+  fixedSalary    Float    @default(0)
+  workStartTime  String?  // "09:00"
+  workEndTime    String?  // "18:00"
+  latenessPenalty   Float   @default(0)
+  latenessThreshold Int     @default(15) // minutes after work start before penalty applies
+  locationLat    Float?
+  locationLng    Float?
+  locationRadius Float?   // meters
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  kpis           KPI[]
+  penaltyRecords PenaltyRecord[]
+  bonusRecords   BonusRecord[]
+  attendances    Attendance[]
+  dailyReports   DailyReport[]
+  chatMessages   ChatMessage[]
+  assignedPenalties PenaltyRecord[] @relation("AssignedPenalties")
+  assignedBonuses   BonusRecord[]   @relation("AssignedBonuses")
+  employeeMonthlyPlans EmployeeMonthlyPlan[]
+}
+
+model KPI {
+  id          String @id @default(cuid())
+  userId      String
+  name        String
+  targetValue Float
+  currentValue Float @default(0)
+  month       Int
+  year        Int
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Penalty {
+  id             String @id @default(cuid())
+  organizationId String
+  reason         String
+  amount         Float
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  records      PenaltyRecord[]
+}
+
+model Bonus {
+  id             String @id @default(cuid())
+  organizationId String
+  reason         String
+  amount         Float
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  records      BonusRecord[]
+}
+
+model PenaltyRecord {
+  id         String   @id @default(cuid())
+  userId     String
+  penaltyId  String?
+  reason     String
+  amount     Float
+  date       DateTime @default(now())
+  assignedById String
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  penalty    Penalty? @relation(fields: [penaltyId], references: [id])
+  assignedBy User     @relation("AssignedPenalties", fields: [assignedById], references: [id])
+}
+
+model BonusRecord {
+  id         String   @id @default(cuid())
+  userId     String
+  bonusId    String?
+  reason     String
+  amount     Float
+  date       DateTime @default(now())
+  assignedById String
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bonus      Bonus?   @relation(fields: [bonusId], references: [id])
+  assignedBy User     @relation("AssignedBonuses", fields: [assignedById], references: [id])
+}
+
+model FunnelStage {
+  id             String @id @default(cuid())
+  organizationId String
+  name           String
+  order          Int
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  reportLeadStatuses DailyReportLeadStatus[]
+}
+
+model SalesStrategy {
+  id               String @id @default(cuid())
+  organizationId   String
+  targetSales      Int
+  targetConversion Float
+  startDate        DateTime
+  endDate          DateTime
+  createdAt        DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  months       SalesStrategyMonth[]
+}
+
+model SalesStrategyMonth {
+  id           String @id @default(cuid())
+  strategyId   String
+  month        Int
+  year         Int
+  targetSales  Int
+  requiredLeads Int
+  actualSales  Int    @default(0)
+
+  strategy SalesStrategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+}
+
+model Attendance {
+  id             String   @id @default(cuid())
+  userId         String
+  date           DateTime
+  checkInTime    DateTime
+  isLate         Boolean  @default(false)
+  lateMinutes    Int      @default(0)
+  penaltyApplied Float    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model DailyReport {
+  id             String   @id @default(cuid())
+  userId         String
+  date           DateTime
+  incomingCalls  Int      @default(0)
+  outgoingCalls  Int      @default(0)
+  totalCalls     Int      @default(0)
+  qualityLeads   Int      @default(0)
+  nonQualityLeads Int     @default(0)
+  officeVisits   Int      @default(0)
+  sales          Int      @default(0)
+  revenue        Float    @default(0)
+  createdAt      DateTime @default(now())
+
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  leadStatuses DailyReportLeadStatus[]
+}
+
+model DailyReportLeadStatus {
+  id       String @id @default(cuid())
+  reportId String
+  stageId  String
+  count    Int    @default(0)
+
+  report DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  stage  FunnelStage @relation(fields: [stageId], references: [id])
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  role      String   // "user" or "assistant"
+  content   String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmployeeMonthlyPlan {
+  id          String   @id @default(cuid())
+  userId      String
+  month       Int
+  year        Int
+  targetSales Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, month, year])
+}
