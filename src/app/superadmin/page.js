@@ -41,11 +41,11 @@ const fmtFull = (n) => {
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div style={{ background: 'rgba(0,10,20,0.97)', border: '1px solid rgba(255,178,104,0.2)', padding: '12px 16px', borderRadius: '10px', boxShadow: '0 20px 40px rgba(0,0,0,0.6)', zIndex: 1000 }}>
-        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', fontWeight: 800, marginBottom: '8px', textTransform: 'uppercase' }}>{label}</p>
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-2)', padding: '12px 16px', borderRadius: '10px', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', zIndex: 1000 }}>
+        <p style={{ color: 'var(--text-3)', fontSize: '10px', fontWeight: 800, marginBottom: '8px', textTransform: 'uppercase' }}>{label}</p>
         {payload.map((entry, idx) => (
           <p key={idx} style={{ color: entry.color, fontSize: '12px', fontWeight: 700, margin: '3px 0' }}>
-            {entry.name}: <span style={{ color: 'white' }}>{typeof entry.value === 'number' && entry.value > 100000 ? fmtFull(entry.value) : entry.value}</span>
+            {entry.name}: <span style={{ color: 'var(--text)' }}>{typeof entry.value === 'number' && entry.value > 100000 ? fmtFull(entry.value) : entry.value}</span>
           </p>
         ))}
       </div>
@@ -61,8 +61,8 @@ const DayFilter = ({ value, onChange }) => (
       <button key={opt.value} onClick={() => onChange(opt.value)} style={{
         padding: '5px 12px', fontSize: '10px', fontWeight: 800, borderRadius: '6px', border: 'none',
         cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.5px', transition: 'all 0.2s',
-        background: value === opt.value ? '#ffb268' : 'rgba(255,255,255,0.06)',
-        color: value === opt.value ? '#001e37' : 'rgba(255,255,255,0.5)',
+        background: value === opt.value ? '#ffb268' : 'var(--bg-elevated)',
+        color: value === opt.value ? '#0f172a' : 'var(--text-2)',
         boxShadow: value === opt.value ? '0 4px 12px rgba(255,178,104,0.4)' : 'none',
       }}>{opt.label}</button>
     ))}
@@ -75,25 +75,25 @@ const StatCard = ({ icon, label, desc, value, valueSuffix, sub, accent = '#ffb26
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
       <div style={{ width: '30px', height: '30px', borderRadius: '7px', background: `${accent}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>{icon}</div>
       <div>
-        <div style={{ fontSize: '11px', fontWeight: 900, color: 'rgba(255,255,255,0.9)' }}>{label}</div>
-        {desc && <div style={{ fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.35)', marginTop: '1px' }}>{desc}</div>}
+        <div style={{ fontSize: '11px', fontWeight: 900, color: 'var(--text)' }}>{label}</div>
+        {desc && <div style={{ fontSize: '9px', fontWeight: 600, color: 'var(--text-3)', marginTop: '1px' }}>{desc}</div>}
       </div>
     </div>
-    <div style={{ fontSize: '24px', fontWeight: 900, color: 'white', lineHeight: 1 }}>
+    <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text)', lineHeight: 1 }}>
       {value}{valueSuffix && <span style={{ fontSize: '12px', fontWeight: 700, color: accent, marginLeft: '4px' }}>{valueSuffix}</span>}
     </div>
-    {sub && <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', fontWeight: 600, marginTop: '7px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '7px', lineHeight: 1.4 }}>{sub}</div>}
+    {sub && <div style={{ fontSize: '10px', color: 'var(--text-3)', fontWeight: 600, marginTop: '7px', borderTop: '1px solid var(--border)', paddingTop: '7px', lineHeight: 1.4 }}>{sub}</div>}
     <div style={{ position: 'absolute', right: '-8px', bottom: '-8px', width: '45px', height: '45px', borderRadius: '50%', background: accent, opacity: 0.05 }} />
   </div>
 );
 
 // ─── SECTION HEADER ──────────────────────────────────────────────────────────
 const SectionHeader = ({ icon, title, desc }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid var(--border)' }}>
     <div style={{ fontSize: '18px' }}>{icon}</div>
     <div>
       <div style={{ fontSize: '13px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</div>
-      {desc && <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>{desc}</div>}
+      {desc && <div style={{ fontSize: '10px', color: 'var(--text-3)', marginTop: '2px' }}>{desc}</div>}
     </div>
   </div>
 );
@@ -102,11 +102,11 @@ const SectionHeader = ({ icon, title, desc }) => (
 const KpiBadge = ({ label, value, total, color }) => {
   const pct = total > 0 ? Math.round((value / total) * 100) : 0;
   return (
-    <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '14px', border: `1px solid ${color}30` }}>
-      <div style={{ fontSize: '9px', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>{label}</div>
+    <div style={{ flex: 1, background: 'var(--bg-elevated)', borderRadius: '10px', padding: '14px', border: `1px solid ${color}30` }}>
+      <div style={{ fontSize: '9px', fontWeight: 800, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>{label}</div>
       <div style={{ fontSize: '22px', fontWeight: 900, color }}>{value}</div>
-      <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '4px' }}>{pct}% jami maqsaddan</div>
-      <div style={{ width: '100%', height: '3px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px', overflow: 'hidden', marginTop: '8px' }}>
+      <div style={{ fontSize: '10px', color: 'var(--text-3)', marginTop: '4px' }}>{pct}% jami maqsaddan</div>
+      <div style={{ width: '100%', height: '3px', background: 'var(--border)', borderRadius: '2px', overflow: 'hidden', marginTop: '8px' }}>
         <div style={{ width: `${pct}%`, height: '100%', background: color, transition: 'width 0.5s' }} />
       </div>
     </div>
@@ -207,7 +207,7 @@ export default function SuperadminDashboard() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
             <div>
               <div style={{ fontSize: '18px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Global Tizim Monitori</div>
-              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '4px', fontWeight: 600 }}>
+              <div style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: '4px', fontWeight: 600 }}>
                 Ko'rsatilmoqda: <span style={{ color: '#ffb268' }}>{selectedDayLabel}</span> davridagi ma'lumotlar
               </div>
             </div>
@@ -247,10 +247,10 @@ export default function SuperadminDashboard() {
               <KpiBadge label="Maqsadga Yetdi ✅" value={k.kpiAchieved || 0} total={k.totalActiveKpis || 0} color="#10b981" />
               <KpiBadge label="Maqsadga Yetmadi ❌" value={k.kpiNotAchieved || 0} total={k.totalActiveKpis || 0} color="#ef4444" />
               <KpiBadge label="120%+ Bajardi 🚀" value={k.kpiOverAchieved || 0} total={k.totalActiveKpis || 0} color="#ffb268" />
-              <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '14px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <div style={{ fontSize: '9px', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginBottom: '6px' }}>O'rtacha Bajarish</div>
+              <div style={{ flex: 1, background: 'var(--bg-elevated)', borderRadius: '10px', padding: '14px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ fontSize: '9px', fontWeight: 800, color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: '6px' }}>O'rtacha Bajarish</div>
                 <div style={{ fontSize: '28px', fontWeight: 900, color: k.avgKpiCompletion >= 80 ? '#10b981' : k.avgKpiCompletion >= 50 ? '#f59e0b' : '#ef4444' }}>{k.avgKpiCompletion || 0}%</div>
-                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '4px' }}>
+                <div style={{ fontSize: '10px', color: 'var(--text-3)', marginTop: '4px' }}>
                   {k.avgKpiCompletion >= 80 ? '🟢 Yaxshi natija' : k.avgKpiCompletion >= 50 ? "🟡 O'rtacha" : '🔴 Past natija'}
                 </div>
                 {k.bestKpiOrg && <div style={{ fontSize: '10px', color: '#ffb268', marginTop: '8px', fontWeight: 700 }}>🥇 {k.bestKpiOrg.name}: {k.bestKpiOrg.value}%</div>}
@@ -293,9 +293,9 @@ export default function SuperadminDashboard() {
               <div style={{ width: '100%', height: '260px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={callsData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                    <XAxis dataKey="name" stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} />
-                    <YAxis stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
+                    <XAxis dataKey="name" stroke="var(--text-3)" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis stroke="var(--text-3)" fontSize={10} tickLine={false} axisLine={false} />
                     <RechartsTooltip content={<CustomTooltip />} />
                     <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 700 }} />
                     <Bar dataKey="Kiruvchi" fill="#06b6d4" radius={[3, 3, 0, 0]} barSize={14} />
@@ -321,15 +321,15 @@ export default function SuperadminDashboard() {
                   </PieChart>
                 </ResponsiveContainer>
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                  <div style={{ fontSize: '20px', fontWeight: 900, color: 'white' }}>{g.totalOrgs || 0}</div>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', fontWeight: 700 }}>JAMI</div>
+                  <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text)' }}>{g.totalOrgs || 0}</div>
+                  <div style={{ fontSize: '9px', color: 'var(--text-3)', fontWeight: 700 }}>JAMI</div>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '8px', marginTop: '8px', justifyContent: 'center' }}>
                 {[{ k: 'FREE', c: '#6b7280' }, { k: 'BASIC', c: '#3b82f6' }, { k: 'PREMIUM', c: '#ffb268' }].map(({ k: key, c }) => (
                   <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '10px', fontWeight: 700 }}>
                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: c }} />
-                    <span style={{ color: 'rgba(255,255,255,0.6)' }}>{key}:</span>
+                    <span style={{ color: 'var(--text-2)' }}>{key}:</span>
                     <span style={{ color: c }}>{sub[key] || 0}</span>
                   </div>
                 ))}
@@ -347,9 +347,9 @@ export default function SuperadminDashboard() {
               <div style={{ width: '100%', height: '260px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={financeData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                    <XAxis dataKey="name" stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} />
-                    <YAxis stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} tickFormatter={v => v >= 1000000 ? (v / 1000000).toFixed(0) + 'M' : v} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
+                    <XAxis dataKey="name" stroke="var(--text-3)" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis stroke="var(--text-3)" fontSize={10} tickLine={false} axisLine={false} tickFormatter={v => v >= 1000000 ? (v / 1000000).toFixed(0) + 'M' : v} />
                     <RechartsTooltip content={<CustomTooltip />} />
                     <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 700 }} />
                     <Bar dataKey="Tushum" barSize={22} fill="#ffb268" radius={[3, 3, 0, 0]} />
@@ -366,8 +366,8 @@ export default function SuperadminDashboard() {
                 {topOrgs.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarMetrics}>
-                      <PolarGrid stroke="rgba(255,255,255,0.06)" />
-                      <PolarAngleAxis dataKey="metric" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 700 }} />
+                      <PolarGrid stroke="var(--chart-grid)" />
+                      <PolarAngleAxis dataKey="metric" tick={{ fill: 'var(--text-3)', fontSize: 10, fontWeight: 700 }} />
                       <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                       <RechartsTooltip content={<CustomTooltip />} />
                       <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 700 }} />
@@ -377,7 +377,7 @@ export default function SuperadminDashboard() {
                     </RadarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>Ma'lumot yo'q</div>
+                  <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-3)', fontSize: '12px' }}>Ma'lumot yo'q</div>
                 )}
               </div>
             </div>
@@ -391,32 +391,32 @@ export default function SuperadminDashboard() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', fontSize: '12px' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
                     {['#', 'Xodim', 'Qo\'ng\'iroq', 'Kiruvchi', 'Chiquvchi', 'Ofis', 'Lid ✅', 'Lid ❌', 'Konversiya', 'Tushum', 'Har qo\'ng\'iroqdan', 'KPI'].map(h => (
-                      <th key={h} style={{ padding: '8px 10px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', fontSize: '8px', fontWeight: 900, letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
+                      <th key={h} style={{ padding: '8px 10px', color: 'var(--text-3)', textTransform: 'uppercase', fontSize: '8px', fontWeight: 900, letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {operators.length === 0 ? (
-                    <tr><td colSpan={12} style={{ padding: '32px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>Bu davr uchun ma'lumot yo'q</td></tr>
+                    <tr><td colSpan={12} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-3)', fontSize: '12px' }}>Bu davr uchun ma'lumot yo'q</td></tr>
                   ) : operators.map((op, i) => {
                     const convColor = op.conversion >= 50 ? '#10b981' : op.conversion >= 25 ? '#f59e0b' : '#ef4444';
                     const kpiColor = op.avgKpi >= 80 ? '#10b981' : op.avgKpi >= 50 ? '#f59e0b' : '#ef4444';
                     return (
                       <tr key={op.id}
-                        style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', background: i % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent', transition: 'background 0.15s' }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,178,104,0.04)'}
-                        onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent'}
+                        style={{ borderBottom: '1px solid var(--row-border)', background: i % 2 === 0 ? 'var(--row-hover)' : 'transparent', transition: 'background 0.15s' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--row-hover)'}
+                        onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? 'var(--row-hover)' : 'transparent'}
                       >
                         <td style={{ padding: '10px' }}>
                           {i < 3
-                            ? <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: ['#ffb268', '#94a3b8', '#cd7f32'][i], display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '9px', color: '#001e37' }}>{i + 1}</div>
-                            : <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: 700, paddingLeft: '4px' }}>{i + 1}</div>}
+                            ? <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: ['#ffb268', '#94a3b8', '#cd7f32'][i], display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '9px', color: '#0f172a' }}>{i + 1}</div>
+                            : <div style={{ fontSize: '10px', color: 'var(--text-3)', fontWeight: 700, paddingLeft: '4px' }}>{i + 1}</div>}
                         </td>
                         <td style={{ padding: '10px' }}>
-                          <div style={{ fontWeight: 800, color: 'white', whiteSpace: 'nowrap' }}>{op.name}</div>
-                          <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>{op.email}</div>
+                          <div style={{ fontWeight: 800, color: 'var(--text)', whiteSpace: 'nowrap' }}>{op.name}</div>
+                          <div style={{ fontSize: '9px', color: 'var(--text-3)', marginTop: '1px' }}>{op.email}</div>
                         </td>
                         <td style={{ padding: '10px', fontWeight: 700 }}>{op.totalCalls}</td>
                         <td style={{ padding: '10px', color: '#06b6d4', fontWeight: 700 }}>{op.incomingCalls || 0}</td>
@@ -426,14 +426,14 @@ export default function SuperadminDashboard() {
                         <td style={{ padding: '10px', color: '#ef4444', fontWeight: 700 }}>{op.nonQualityLeads}</td>
                         <td style={{ padding: '10px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <div style={{ width: '40px', height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px', overflow: 'hidden' }}>
+                            <div style={{ width: '40px', height: '4px', background: 'var(--border)', borderRadius: '2px', overflow: 'hidden' }}>
                               <div style={{ width: `${Math.min(100, op.conversion)}%`, height: '100%', background: convColor }} />
                             </div>
                             <span style={{ fontWeight: 800, color: convColor, fontSize: '11px' }}>{op.conversion}%</span>
                           </div>
                         </td>
                         <td style={{ padding: '10px', fontWeight: 800, color: '#ffb268', whiteSpace: 'nowrap' }}>{fmt(op.revenue)}</td>
-                        <td style={{ padding: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.6)', whiteSpace: 'nowrap' }}>{fmt(op.revenuePerCall)}</td>
+                        <td style={{ padding: '10px', fontWeight: 700, color: 'var(--text-2)', whiteSpace: 'nowrap' }}>{fmt(op.revenuePerCall)}</td>
                         <td style={{ padding: '10px' }}>
                           <span style={{ fontWeight: 800, color: kpiColor }}>{op.avgKpi}%</span>
                         </td>
@@ -453,9 +453,9 @@ export default function SuperadminDashboard() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', fontSize: '12px' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
                     {['Tashkilot', 'Holat', 'Kapasite', 'Tushum', 'Sof Foyda', 'Xodim/Tushum', 'Konversiya', 'KPI', 'Qo\'ng\'iroq', 'Maosh Fondi'].map(h => (
-                      <th key={h} style={{ padding: '10px 10px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', fontSize: '8px', fontWeight: 900, letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
+                      <th key={h} style={{ padding: '10px 10px', color: 'var(--text-3)', textTransform: 'uppercase', fontSize: '8px', fontWeight: 900, letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -466,13 +466,13 @@ export default function SuperadminDashboard() {
                     const convColor = convVal >= 50 ? '#10b981' : convVal >= 25 ? '#f59e0b' : '#ef4444';
                     return (
                       <tr key={org.id}
-                        style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', background: i % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent', transition: 'background 0.15s' }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,178,104,0.04)'}
-                        onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent'}
+                        style={{ borderBottom: '1px solid var(--row-border)', background: i % 2 === 0 ? 'var(--row-hover)' : 'transparent', transition: 'background 0.15s' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--row-hover)'}
+                        onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? 'var(--row-hover)' : 'transparent'}
                       >
                         <td style={{ padding: '12px 10px' }}>
-                          <div style={{ fontWeight: 800, color: 'white', whiteSpace: 'nowrap' }}>{org.name}</div>
-                          <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginTop: '1px' }}>{org.subscriptionPlan} • {org.phone || 'Tel yo\'q'}</div>
+                          <div style={{ fontWeight: 800, color: 'var(--text)', whiteSpace: 'nowrap' }}>{org.name}</div>
+                          <div style={{ fontSize: '9px', color: 'var(--text-3)', marginTop: '1px' }}>{org.subscriptionPlan} • {org.phone || 'Tel yo\'q'}</div>
                         </td>
                         <td style={{ padding: '12px 10px' }}>
                           <div style={{ display: 'inline-flex', padding: '2px 8px', background: org.status === 'ACTIVE' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)', color: org.status === 'ACTIVE' ? '#10b981' : '#f59e0b', borderRadius: '20px', fontSize: '8px', fontWeight: 800, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
@@ -481,30 +481,30 @@ export default function SuperadminDashboard() {
                         </td>
                         <td style={{ padding: '12px 10px', minWidth: '100px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <div style={{ width: '40px', height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px', overflow: 'hidden' }}>
+                            <div style={{ width: '40px', height: '4px', background: 'var(--border)', borderRadius: '2px', overflow: 'hidden' }}>
                               <div style={{ width: `${org.capacityUsed}%`, height: '100%', background: capColor }} />
                             </div>
                             <span style={{ color: capColor, fontWeight: 700, fontSize: '11px' }}>{org.capacityUsed}%</span>
                           </div>
-                          <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginTop: '2px' }}>{org.employeeCount}/{org.maxEmployees}</div>
+                          <div style={{ fontSize: '9px', color: 'var(--text-3)', marginTop: '2px' }}>{org.employeeCount}/{org.maxEmployees}</div>
                         </td>
                         <td style={{ padding: '12px 10px', fontWeight: 800, color: '#ffb268', whiteSpace: 'nowrap' }}>{fmt(org.revenue)}</td>
                         <td style={{ padding: '12px 10px', fontWeight: 800, color: org.netProfit >= 0 ? '#10b981' : '#ef4444', whiteSpace: 'nowrap' }}>
                           {org.netProfit >= 0 ? '+' : ''}{fmt(org.netProfit)}
                         </td>
-                        <td style={{ padding: '12px 10px', color: 'rgba(255,255,255,0.7)', fontWeight: 700, whiteSpace: 'nowrap' }}>{fmt(org.revenuePerEmployee)}</td>
+                        <td style={{ padding: '12px 10px', color: 'var(--text-2)', fontWeight: 700, whiteSpace: 'nowrap' }}>{fmt(org.revenuePerEmployee)}</td>
                         <td style={{ padding: '12px 10px' }}>
                           <span style={{ fontWeight: 800, color: convColor }}>{convVal}%</span>
                         </td>
                         <td style={{ padding: '12px 10px' }}>
                           <span style={{ fontWeight: 700, color: org.avgKpi >= 70 ? '#10b981' : org.avgKpi >= 40 ? '#f59e0b' : '#ef4444' }}>{org.avgKpi}%</span>
                         </td>
-                        <td style={{ padding: '12px 10px', fontSize: '11px', color: 'rgba(255,255,255,0.7)', whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '12px 10px', fontSize: '11px', color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
                           📥{org.incomingCalls || 0} / 📤{org.outgoingCalls || 0}
                         </td>
                         <td style={{ padding: '12px 10px', whiteSpace: 'nowrap' }}>
                           <div style={{ fontSize: '11px', fontWeight: 800 }}>{fmt(org.salaryFund)}</div>
-                          <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)' }}>
+                          <div style={{ fontSize: '9px', color: 'var(--text-3)' }}>
                             <span style={{ color: '#ef4444' }}>-{fmt(org.penalties)}</span> / <span style={{ color: '#3b82f6' }}>+{fmt(org.bonuses)}</span>
                           </div>
                         </td>
@@ -512,7 +512,7 @@ export default function SuperadminDashboard() {
                     );
                   })}
                   {orgs.length === 0 && (
-                    <tr><td colSpan={10} style={{ padding: '32px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>Tashkilotlar ma'lumotlari yo'q</td></tr>
+                    <tr><td colSpan={10} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-3)', fontSize: '12px' }}>Tashkilotlar ma'lumotlari yo'q</td></tr>
                   )}
                 </tbody>
               </table>

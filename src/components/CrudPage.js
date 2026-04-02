@@ -118,7 +118,7 @@ function CrudPage({ title, apiUrl, fields }) {
         </div>
 
         {showModal && (
-          <div className="modal-overlay" onClick={() => { setShowModal(false); setEditItem(null); }} style={{ backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.6)' }}>
+          <div className="modal-overlay" onClick={() => { setShowModal(false); setEditItem(null); }} style={{ backdropFilter: 'blur(4px)', background: 'var(--bg-card)' }}>
             <div className="modal glass-panel" style={{ maxWidth: '440px', padding: '0', background: 'var(--bg-card)' }} onClick={e => e.stopPropagation()}>
               <div className="modal-header" style={{ borderBottom: '1px solid var(--border-color)', padding: '16px 24px' }}>
                 <div style={{ fontSize: '14px', fontWeight: 700 }}>{editItem ? 'Ma\'lumotni tahrirlash' : 'Yangi ma\'lumot qo\'shish'}</div>

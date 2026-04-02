@@ -69,11 +69,11 @@ export default function SettingsPage() {
               <div style={{ fontSize: '16px', fontWeight: 800, marginBottom: '20px', letterSpacing: '-0.5px', textTransform: 'uppercase' }}>Tashkilot ma'lumotlari</div>
               <div className="form-group">
                 <label className="form-label">Tashkilot nomi</label>
-                <input className="form-input" style={{background: 'rgba(0,0,0,0.1)'}} value={form.organizationName} onChange={e => setForm({...form, organizationName: e.target.value})} placeholder="Masalan: Elite Sales LLC" />
+                <input className="form-input" style={{background: 'var(--bg-elevated)'}} value={form.organizationName} onChange={e => setForm({...form, organizationName: e.target.value})} placeholder="Masalan: Elite Sales LLC" />
               </div>
               <div className="form-row">
-                <div className="form-group"><label className="form-label">Rahbar Ismi</label><input className="form-input" style={{background: 'rgba(0,0,0,0.1)'}} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Rahbar ismini kiriting..." /></div>
-                <div className="form-group"><label className="form-label">Akkount Email</label><input className="form-input" style={{background: 'rgba(0,0,0,0.1)'}} value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="Emailni kiriting..." /></div>
+                <div className="form-group"><label className="form-label">Rahbar Ismi</label><input className="form-input" style={{background: 'var(--bg-elevated)'}} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Rahbar ismini kiriting..." /></div>
+                <div className="form-group"><label className="form-label">Akkount Email</label><input className="form-input" style={{background: 'var(--bg-elevated)'}} value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="Emailni kiriting..." /></div>
               </div>
               <button className="btn btn-primary" style={{ width: '100%', marginTop: '12px', fontSize: '11px' }} onClick={() => handleSave('org')} disabled={savingOrg}>
                 {savingOrg ? ' MUVAFFARIYATLI SAQLANDI' : 'O\'ZGARISHLARNI SAQLASH'}
@@ -86,12 +86,12 @@ export default function SettingsPage() {
                  Ushbu sozlamalar barcha yangi xodimlar uchun andaza sifatida ishlatiladi.
               </div>
               <div className="form-row">
-                <div className="form-group"><label className="form-label">Ish boshlash vaqti</label><input className="form-input" type="time" style={{background: 'rgba(0,0,0,0.1)'}} value={form.workStartTime} onChange={e => setForm({...form, workStartTime: e.target.value})} /></div>
-                <div className="form-group"><label className="form-label">Ish tugash vaqti</label><input className="form-input" type="time" style={{background: 'rgba(0,0,0,0.1)'}} value={form.workEndTime} onChange={e => setForm({...form, workEndTime: e.target.value})} /></div>
+                <div className="form-group"><label className="form-label">Ish boshlash vaqti</label><input className="form-input" type="time" style={{background: 'var(--bg-elevated)'}} value={form.workStartTime} onChange={e => setForm({...form, workStartTime: e.target.value})} /></div>
+                <div className="form-group"><label className="form-label">Ish tugash vaqti</label><input className="form-input" type="time" style={{background: 'var(--bg-elevated)'}} value={form.workEndTime} onChange={e => setForm({...form, workEndTime: e.target.value})} /></div>
               </div>
               <div className="form-group">
                 <label className="form-label">Kechikish uchun jarima summasi (so'm)</label>
-                <input className="form-input" type="number" style={{background: 'rgba(0,0,0,0.1)'}} value={form.latenessPenalty} onChange={e => setForm({...form, latenessPenalty: e.target.value})} placeholder="50000" />
+                <input className="form-input" type="number" style={{background: 'var(--bg-elevated)'}} value={form.latenessPenalty} onChange={e => setForm({...form, latenessPenalty: e.target.value})} placeholder="50000" />
                 <div className="form-hint" style={{ marginTop: '8px', opacity: 0.6, fontSize: '11px' }}>Kechikish chegarasidan oshib ketganda belgilangan jarima summasi.</div>
               </div>
               <button className="btn btn-primary" style={{ width: '100%', marginTop: '12px', fontSize: '11px' }} onClick={() => handleSave('work')} disabled={savingWork}>

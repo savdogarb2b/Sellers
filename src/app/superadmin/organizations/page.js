@@ -155,8 +155,8 @@ export default function OrganizationsPage() {
                 style={{
                   padding: '8px 20px',
                   borderRadius: '20px',
-                  border: filter === f ? '1px solid var(--primary-500)' : '1px solid rgba(255,255,255,0.08)',
-                  background: filter === f ? 'var(--primary-ghost)' : 'rgba(255,255,255,0.02)',
+                  border: filter === f ? '1px solid var(--primary-500)' : '1px solid var(--border)',
+                  background: filter === f ? 'var(--primary-ghost)' : 'var(--row-hover)',
                   color: filter === f ? 'var(--primary-400)' : 'var(--text-muted)',
                   fontSize: '10px',
                   fontWeight: 900,
@@ -197,7 +197,7 @@ export default function OrganizationsPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
                           <span style={{ fontSize: '16px', fontWeight: 950, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{org.name}</span>
                           <StatusBadge status={status} />
-                          <span style={{ fontSize: '9px', fontWeight: 800, color: 'var(--text-ghost)', padding: '2px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>{org.subscriptionPlan || 'BASIC'}</span>
+                          <span style={{ fontSize: '9px', fontWeight: 800, color: 'var(--text-ghost)', padding: '2px 8px', background: 'var(--bg-elevated)', borderRadius: '8px', border: '1px solid var(--border)' }}>{org.subscriptionPlan || 'BASIC'}</span>
                         </div>
                         <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
                           {org.address && <span>{org.address} • </span>}
@@ -293,7 +293,7 @@ export default function OrganizationsPage() {
                   </div>
                 </div>
 
-                <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '20px', marginTop: '20px' }}>
+                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '20px', marginTop: '20px' }}>
                   <div style={{ fontSize: '11px', fontWeight: 900, color: 'var(--text-muted)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>Admin Ma'lumotlari</div>
                   <div className="form-group">
                     <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Admin to'liq ismi *</label>
@@ -302,7 +302,7 @@ export default function OrganizationsPage() {
                   </div>
                 </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: '20px 28px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: '20px 28px', borderTop: '1px solid var(--border)' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setShowCreateModal(false)} style={{ fontSize: '10px', fontWeight: 800 }}>BEKOR QILISH</button>
                 <button type="submit" className="btn btn-primary" disabled={creating} style={{ fontSize: '10px', fontWeight: 900 }}>{creating ? 'YARATILMOQDA...' : 'TASHKILOTNI YARATISH'}</button>
               </div>
@@ -352,7 +352,7 @@ export default function OrganizationsPage() {
                   </div>
                 </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: '20px 28px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: '20px 28px', borderTop: '1px solid var(--border)' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setShowEditModal(null)} style={{ fontSize: '10px', fontWeight: 800 }}>BEKOR QILISH</button>
                 <button type="submit" className="btn btn-primary" disabled={saving} style={{ fontSize: '10px', fontWeight: 900 }}>{saving ? 'SAQLANMOQDA...' : 'SAQLASH'}</button>
               </div>
@@ -376,7 +376,7 @@ export default function OrganizationsPage() {
                 <input className="form-input" value={freezeReason} onChange={e => setFreezeReason(e.target.value)} placeholder="Masalan: To'lov muddati o'tgan..." />
               </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: '20px 28px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: '20px 28px', borderTop: '1px solid var(--border)' }}>
               <button className="btn btn-secondary" onClick={() => setShowFreezeModal(null)} style={{ fontSize: '10px', fontWeight: 800 }}>BEKOR QILISH</button>
               <button className="btn btn-primary" onClick={() => handleFreeze(showFreezeModal)} style={{ fontSize: '10px', fontWeight: 900, background: 'linear-gradient(135deg, var(--warning-500), #d97706)' }}>MUZLATISH</button>
             </div>
@@ -389,7 +389,7 @@ export default function OrganizationsPage() {
             <div style={{ padding: '28px', textAlign: 'center' }}>
               <div style={{ fontSize: '16px', fontWeight: 950, textTransform: 'uppercase', color: 'var(--primary-400)', letterSpacing: '2px', marginBottom: '24px' }}>Tashkilot Muvaffaqiyatli Yaratildi</div>
 
-              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '24px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '24px' }}>
+              <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border)', marginBottom: '24px' }}>
                 <div style={{ marginBottom: '20px' }}>
                   <div style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '6px' }}>ADMINISTRATOR</div>
                   <div style={{ fontSize: '18px', fontWeight: 900, textTransform: 'uppercase' }}>{showCredentials.adminName}</div>
@@ -398,11 +398,11 @@ export default function OrganizationsPage() {
                 <div style={{ display: 'grid', gap: '16px' }}>
                   <div>
                     <div style={{ fontSize: '9px', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '6px' }}>LOGIN / EMAIL</div>
-                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '12px', fontSize: '16px', fontWeight: 950, letterSpacing: '1px' }}>{showCredentials.login}</div>
+                    <div style={{ background: 'var(--bg-elevated)', padding: '12px', borderRadius: '12px', fontSize: '16px', fontWeight: 950, letterSpacing: '1px' }}>{showCredentials.login}</div>
                   </div>
                   <div>
                     <div style={{ fontSize: '9px', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '6px' }}>MAXFIY PAROL</div>
-                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '12px', fontSize: '16px', fontWeight: 950, letterSpacing: '1px' }}>{showCredentials.password}</div>
+                    <div style={{ background: 'var(--bg-elevated)', padding: '12px', borderRadius: '12px', fontSize: '16px', fontWeight: 950, letterSpacing: '1px' }}>{showCredentials.password}</div>
                   </div>
                 </div>
               </div>
@@ -431,8 +431,8 @@ export default function OrganizationsPage() {
 
 function ModalOverlay({ children, onClose }) {
   return (
-    <div className="modal-overlay" onClick={onClose} style={{ backdropFilter: 'blur(14px)', background: 'rgba(0,30,55,0.85)' }}>
-      <div className="card glass-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', width: '100%', border: '1px solid rgba(255,255,255,0.1)', animation: 'modalIn 0.3s ease forwards', margin: '5vh auto' }}>
+    <div className="modal-overlay" onClick={onClose} style={{ backdropFilter: 'blur(14px)', background: 'var(--bg-deep)' }}>
+      <div className="card glass-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', width: '100%', border: '1px solid var(--border)', animation: 'modalIn 0.3s ease forwards', margin: '5vh auto' }}>
         {children}
       </div>
     </div>
@@ -448,7 +448,7 @@ function ActionBtn({ label, onClick, color }) {
         fontSize: '9px',
         fontWeight: 900,
         color: color,
-        background: 'rgba(255,255,255,0.02)',
+        background: 'var(--row-hover)',
         border: `1px solid ${color}22`,
         borderRadius: '8px',
         cursor: 'pointer',
@@ -458,7 +458,7 @@ function ActionBtn({ label, onClick, color }) {
         transition: 'all 0.2s ease',
       }}
       onMouseEnter={e => { e.target.style.background = `${color}15`; e.target.style.borderColor = `${color}44`; }}
-      onMouseLeave={e => { e.target.style.background = 'rgba(255,255,255,0.02)'; e.target.style.borderColor = `${color}22`; }}
+      onMouseLeave={e => { e.target.style.background = 'var(--row-hover)'; e.target.style.borderColor = `${color}22`; }}
     >
       {label}
     </button>
@@ -467,7 +467,7 @@ function ActionBtn({ label, onClick, color }) {
 
 function MiniStat({ label, value, color }) {
   return (
-    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px 12px', borderRadius: '12px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.03)' }}>
+    <div style={{ background: 'var(--row-hover)', padding: '14px 12px', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--row-border)' }}>
       <div style={{ fontSize: '17px', fontWeight: 950, color: color || 'var(--text-primary)' }}>{value}</div>
       <div style={{ fontSize: '8px', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '4px' }}>{label}</div>
     </div>

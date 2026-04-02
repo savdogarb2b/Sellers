@@ -66,7 +66,7 @@ export default function ReportPage() {
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', background: 'rgba(255,255,255,0.03)', padding: '6px', borderRadius: '14px', width: 'fit-content' }}>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', background: 'var(--bg-elevated)', padding: '6px', borderRadius: '14px', width: 'fit-content' }}>
             <button className={`btn ${tab === 'form' ? 'btn-primary' : 'btn-secondary'}`} style={{ border: 'none', borderRadius: '10px', fontSize: '10px' }} onClick={() => setTab('form')}>HISOBOT YOZISH</button>
             <button className={`btn ${tab === 'history' ? 'btn-secondary' : 'btn-secondary'}`} style={{ border: tab === 'history' ? '1px solid var(--primary-500)' : 'none', borderRadius: '10px', fontSize: '10px' }} onClick={() => setTab('history')}>TARIX ({reports.length})</button>
           </div>
@@ -138,10 +138,10 @@ export default function ReportPage() {
                   <div className="card glass-panel">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                       <div style={{ fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Kechagi natijalar</div>
-                      <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)', background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '4px' }}>KECHA</span>
+                      <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)', background: 'var(--bg-elevated)', padding: '4px 8px', borderRadius: '4px' }}>KECHA</span>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                      <div style={{ padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: '12px', border: '1px solid var(--border)' }}>
                         <div style={{ fontSize: '20px', fontWeight: 900 }}>{yesterdayReport.totalCalls}</div>
                         <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginTop: '2px' }}>Jami qo'ng'iroq</div>
                       </div>
@@ -150,7 +150,7 @@ export default function ReportPage() {
                         <div style={{ fontSize: '9px', color: 'var(--accent-teal)', fontWeight: 800, textTransform: 'uppercase', marginTop: '2px' }}>Sotuvlar</div>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)', marginTop: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--bg-elevated)', borderRadius: '12px', border: '1px solid var(--border)', marginTop: '12px' }}>
                       <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Umumiy tushum</span>
                       <span style={{ fontSize: '12px', fontWeight: 900, color: 'var(--primary-400)' }}>{(yesterdayReport.revenue || 0).toLocaleString()} UZS</span>
                     </div>
@@ -171,11 +171,11 @@ export default function ReportPage() {
                         const avgCalls = Math.round(week.reduce((s, r) => s + r.totalCalls, 0) / week.length);
                         const avgQuality = Math.round(week.reduce((s, r) => s + r.qualityLeads, 0) / week.length);
                         return <>
-                          <div style={{ padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                          <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: '12px', border: '1px solid var(--border)' }}>
                             <div style={{ fontSize: '20px', fontWeight: 900 }}>{avgCalls}</div>
                             <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginTop: '2px' }}>O'rtacha aloqa</div>
                           </div>
-                          <div style={{ padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                          <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: '12px', border: '1px solid var(--border)' }}>
                             <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--accent-teal)' }}>{Math.round(week.reduce((s, r) => s + r.sales, 0) / week.length)}</div>
                             <div style={{ fontSize: '9px', color: 'var(--accent-teal)', fontWeight: 800, textTransform: 'uppercase', marginTop: '2px' }}>O'rtacha sotuv</div>
                           </div>
@@ -199,7 +199,7 @@ export default function ReportPage() {
                        {new Date(r.date).toLocaleDateString('uz-UZ', { weekday: 'long', month: 'long', day: 'numeric' })}
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '10px', fontWeight: 900, padding: '4px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)' }}>{r.totalCalls} ALOQA</span>
+                      <span style={{ fontSize: '10px', fontWeight: 900, padding: '4px 8px', borderRadius: '4px', background: 'var(--bg-elevated)', border: '1px solid var(--border-color)' }}>{r.totalCalls} ALOQA</span>
                       <span style={{ fontSize: '10px', fontWeight: 900, padding: '4px 8px', borderRadius: '4px', background: 'rgba(56, 189, 248, 0.1)', color: 'var(--accent-blue)' }}>{r.officeVisits} KELDI</span>
                       <span style={{ fontSize: '10px', fontWeight: 900, padding: '4px 8px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-teal)' }}>{r.sales} TASDIQ • {(r.revenue || 0).toLocaleString()} UZS</span>
                     </div>

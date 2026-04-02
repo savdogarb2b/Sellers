@@ -135,8 +135,8 @@ export default function AdminDashboard() {
                   </Pie>
                   <RechartsTooltip 
                     formatter={(value) => `${value.toLocaleString()} UZS`}
-                    contentStyle={{ background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                    itemStyle={{ fontSize: '12px', fontWeight: 800, color: '#fff' }}
+                    contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-2)', borderRadius: '10px', boxShadow: 'var(--shadow-lg)', color: 'var(--text)' }}
+                    itemStyle={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}
                   />
                   <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 800, fill: 'var(--text-muted)' }}/>
                 </PieChart>
@@ -150,12 +150,12 @@ export default function AdminDashboard() {
             <div style={{ height: '220px', width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <RadialBarChart cx="50%" cy="50%" innerRadius="30%" outerRadius="100%" barSize={16} data={healthData} startAngle={90} endAngle={-270}>
-                  <RadialBar minAngle={15} background={{ fill: 'rgba(255,255,255,0.05)' }} clockWise dataKey="uv" cornerRadius={10} />
+                  <RadialBar minAngle={15} background={{ fill: 'var(--chart-grid)' }} clockWise dataKey="uv" cornerRadius={10} />
                   <Legend iconSize={10} layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '11px', fontWeight: 800, paddingLeft: '20px' }} />
                   <RechartsTooltip 
                     formatter={(value) => `${value}%`}
-                    contentStyle={{ background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                    itemStyle={{ fontSize: '12px', fontWeight: 800, color: '#fff' }}
+                    contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-2)', borderRadius: '10px', boxShadow: 'var(--shadow-lg)', color: 'var(--text)' }}
+                    itemStyle={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}
                   />
                 </RadialBarChart>
               </ResponsiveContainer>
@@ -184,14 +184,14 @@ export default function AdminDashboard() {
                       <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
                   <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={10} tickLine={false} axisLine={false} />
                   <YAxis yAxisId="left" stroke="var(--text-muted)" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${v} ming`} />
                   <YAxis yAxisId="right" orientation="right" stroke="var(--text-muted)" fontSize={10} tickLine={false} axisLine={false} />
                   <RechartsTooltip 
-                    contentStyle={{ background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', backdropFilter: 'blur(10px)', color: '#fff' }}
-                    itemStyle={{ fontSize: '12px', fontWeight: 800 }}
-                    labelStyle={{ color: 'var(--primary-400)', fontSize: '10px', textTransform: 'uppercase', marginBottom: '4px', fontWeight: 800 }}
+                    contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-2)', borderRadius: '10px', boxShadow: 'var(--shadow-lg)', color: 'var(--text)' }}
+                    itemStyle={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}
+                    labelStyle={{ color: 'var(--primary)', fontSize: '10px', textTransform: 'uppercase', marginBottom: '4px', fontWeight: 800 }}
                   />
                   <Area yAxisId="left" type="monotone" dataKey="tushum" name="Tushum (ming UZS)" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorTushum)" />
                   <Area yAxisId="right" type="monotone" dataKey="sotuv" name="Sotuv Soni" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorSotuv)" />
@@ -209,13 +209,13 @@ export default function AdminDashboard() {
                 {funnel.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={funnel} layout="vertical" margin={{ top: 0, right: 30, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.02)" horizontal={true} vertical={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" horizontal={true} vertical={false} />
                       <XAxis type="number" hide />
                       <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} stroke="var(--text-muted)" fontSize={10} width={100} />
                       <RechartsTooltip 
-                        cursor={{ fill: 'rgba(255,255,255,0.04)' }}
-                        contentStyle={{ background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }} 
-                        itemStyle={{ fontSize: '12px', fontWeight: 800, color: '#fff' }}
+                        cursor={{ fill: 'var(--chart-hover)' }}
+                        contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-2)', borderRadius: '10px', boxShadow: 'var(--shadow-lg)', color: 'var(--text)' }}
+                        itemStyle={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}
                       />
                       <Bar dataKey="count" name="Jami Lidlar" radius={[0, 6, 6, 0]} fill="var(--primary-500)">
                         {funnel.map((entry, index) => (
@@ -238,12 +238,12 @@ export default function AdminDashboard() {
                 {strategyMonths.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={strategyMonths.map(m => ({ name: months[m.month - 1], Reja: m.targetSales, Amalda: m.actualSales }))}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
                       <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={10} tickLine={false} axisLine={false} />
                       <YAxis stroke="var(--text-muted)" fontSize={10} tickLine={false} axisLine={false} />
                       <RechartsTooltip 
-                        cursor={{ fill: 'rgba(255,255,255,0.04)' }}
-                        contentStyle={{ background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }} 
+                        cursor={{ fill: 'var(--chart-hover)' }}
+                        contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-2)', borderRadius: '10px', boxShadow: 'var(--shadow-lg)', color: 'var(--text)' }}
                       />
                       <Bar dataKey="Reja" fill="var(--bg-input)" radius={[4, 4, 0, 0]} />
                       <Bar dataKey="Amalda" fill="#10b981" radius={[4, 4, 0, 0]} />
@@ -275,16 +275,16 @@ export default function AdminDashboard() {
               const checkedIn = !!emp.todayAtt;
               return (
                 <div key={emp.id} className="animate-in" style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  padding: '12px 16px', 
-                  background: 'rgba(255,255,255,0.015)',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(255,255,255,0.03)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '12px 16px',
+                  background: 'var(--row-hover)',
+                  borderRadius: '10px',
+                  border: '1px solid var(--row-border)',
                   gap: '16px',
                   animationDelay: `${i * 0.05}s`
                 }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--primary-500)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '13px', color: '#0f172a' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg,var(--primary),var(--violet))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '13px', color: '#fff' }}>
                     {emp.name?.charAt(0)}
                   </div>
                   <div style={{ flex: 1 }}>

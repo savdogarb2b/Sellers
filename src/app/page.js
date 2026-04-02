@@ -162,7 +162,7 @@ export default function LandingPage() {
             color="var(--primary-400)"
           />
           <FeatureCard 
-            title="Gemini AI (Sun’iy Intellekt)" 
+            title="DeepSeek AI (Sun’iy Intellekt)"
             desc="Ichkarida sizning kompaniyangiz statistikasini tahlil qilib, eng optimal sotuv strategiyasini beruvchi virtual maslahatchi o’rnatilgan."
             color="var(--accent-blue)"
           />

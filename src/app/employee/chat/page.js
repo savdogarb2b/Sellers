@@ -5,7 +5,7 @@ import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Send, Trash2, Bot, User, Sparkles } from 'lucide-react';
+import { Bot, Sparkles, Zap, ShieldAlert, TrendingUp, Send, Trash2 } from 'lucide-react';
 
 export default function EmployeeChatPage() {
   const [messages, setMessages] = useState([]);
@@ -13,31 +13,31 @@ export default function EmployeeChatPage() {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const chatRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => { fetchData(); }, []);
   useEffect(() => { if (chatRef.current) { chatRef.current.scrollTop = chatRef.current.scrollHeight; } }, [messages]);
 
   const fetchData = async () => {
     try {
-      const res = await fetch('/api/chat');
-      const msgs = await res.json();
+      const msgRes = await fetch('/api/chat');
+      const msgs = await msgRes.json();
       setMessages(Array.isArray(msgs) ? msgs : []);
     } catch (e) {}
     setLoading(false);
   };
 
-  const handleSend = async (e) => {
+  const handleSend = async (e, textOverride) => {
     if (e) e.preventDefault();
-    if (!input.trim() || sending) return;
+    const userMsg = textOverride || input.trim();
+    if (!userMsg || sending) return;
 
-    const userMsg = input.trim();
     setInput('');
-    
-    setMessages(prev => [...prev, { role: 'user', content: userMsg, createdAt: new Date() }]);
-    
+    const userMsgObj = { role: 'user', content: userMsg, createdAt: new Date() };
+    setMessages(prev => [...prev, userMsgObj]);
+
     const aiMsgId = Date.now().toString();
     setMessages(prev => [...prev, { id: aiMsgId, role: 'assistant', content: '', createdAt: new Date() }]);
-    
     setSending(true);
 
     try {
@@ -56,26 +56,31 @@ export default function EmployeeChatPage() {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
-        const chunk = decoder.decode(value);
-        accumulatedContent += chunk;
-
-        setMessages(prev => prev.map(m => 
-          m.id === aiMsgId ? { ...m, content: accumulatedContent } : m
-        ));
+        accumulatedContent += decoder.decode(value);
+        setMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: accumulatedContent } : m));
       }
     } catch (err) {
-      setMessages(prev => prev.map(m => 
-        m.id === aiMsgId ? { ...m, content: 'Xatolik yuz berdi. Qayta urinib ko\'ring.' } : m
-      ));
+      setMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: 'Xatolik yuz berdi. Iltimos qayta urinib ko\'ring.' } : m));
     }
     setSending(false);
+    inputRef.current?.focus();
   };
 
   const clearHistory = async () => {
-    if (!confirm('Chat tarixini tozalashni xohlaysizmi?')) return;
+    if (!confirm('Suhbat tarixini tozalashni xohlaysizmi?')) return;
     await fetch('/api/chat', { method: 'DELETE' });
     setMessages([]);
+  };
+
+  const quickPrompts = [
+    { title: 'Bugungi vazifalar', text: 'Bugungi eng muhim vazifalar va maqsadlarni sanab oting.', icon: <Zap size={14} /> },
+    { title: 'Mijoz e\'tirozi', text: 'Mijoz qimmat deb e\'tiroz bildirsa qanday javob berish kerak?', icon: <ShieldAlert size={14} /> },
+    { title: 'Sotuv taktikasi', text: 'Sotuvlarni yopish uchun taktikalar o\'rgat.', icon: <TrendingUp size={14} /> },
+  ];
+
+  const formatTime = (dateStr) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleTimeString('uz', { hour: '2-digit', minute: '2-digit' });
   };
 
   return (
@@ -83,65 +88,198 @@ export default function EmployeeChatPage() {
       <Sidebar />
       <Navbar />
       <main className="main-content" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--navbar-height))', padding: 0 }}>
-        
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
+
+        {/* HEADER */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '14px 24px',
+          background: 'var(--bg-card)',
+          backdropFilter: 'blur(20px)',
+          borderBottom: '1px solid var(--border)',
+          flexShrink: 0,
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: 32, height: 32, borderRadius: '10px', background: 'var(--primary-500)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000' }}><Bot size={18} /></div>
+            <div style={{
+              width: 38, height: 38, borderRadius: '10px',
+              background: 'linear-gradient(135deg, var(--primary-500), var(--primary-600))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text)',
+            }}>
+              <Bot size={20} />
+            </div>
             <div>
-              <div style={{ fontSize: '15px', fontWeight: 950, letterSpacing: '0.5px' }}>AI YORDAMCHI</div>
-              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Shaxsiy maslahatchi</div>
+              <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)' }}>AI Yordamchi</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 6px #10b981' }} />
+                <span style={{ fontSize: '10px', color: '#10b981', fontWeight: 700 }}>Onlayn</span>
+              </div>
             </div>
           </div>
-          <button className="btn btn-secondary" onClick={clearHistory} style={{ fontSize: '9px', fontWeight: 950, padding: '8px 12px', color: '#ef4444', background: 'rgba(239, 68, 68, 0.05)' }}>
-            <Trash2 size={12} style={{ marginRight: '6px' }} /> TOZALASH
-          </button>
+          {messages.length > 0 && (
+            <button onClick={clearHistory} className="btn btn-danger btn-sm" style={{ fontSize: '10px', fontWeight: 800, padding: '8px 14px' }}>
+              <Trash2 size={12} /> Tozalash
+            </button>
+          )}
         </div>
 
-        {/* Chat Area */}
-        <div ref={chatRef} style={{ flex: 1, overflowY: 'auto', padding: '30px 40px', background: 'var(--bg-deeper)', display: 'flex', flexDirection: 'column', gap: '20px', minHeight: 0 }}>
-          {loading ? <div className="loading-container"><div className="loading-spinner" /></div> : messages.length === 0 ? (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <Sparkles size={40} style={{ color: 'var(--primary-500)', marginBottom: '16px' }} />
-              <div style={{ fontSize: '18px', fontWeight: 950, textAlign: 'center' }}>AI STRATEGIK YORDAMCHI</div>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '8px', textAlign: 'center' }}>Menga savol bering va men sizga sotuvda yordam beraman.</p>
+        {/* CHAT AREA */}
+        <div ref={chatRef} className="custom-scrollbar" style={{
+          flex: 1, overflowY: 'auto', padding: '24px',
+          background: 'var(--bg-base)', scrollBehavior: 'smooth'
+        }}>
+          {loading ? (
+            <div className="loading-container" style={{ minHeight: '300px' }}><div className="loading-spinner" /></div>
+          ) : messages.length === 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '65vh', animation: 'fadeIn 0.5s ease' }}>
+              <div style={{ width: 72, height: 72, borderRadius: '20px', background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+                <Sparkles size={32} style={{ color: 'var(--primary-500)' }} />
+              </div>
+              <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '2px' }}>AI Ishchi Yordamchi</div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '10px', textAlign: 'center', maxWidth: '420px', lineHeight: '1.7' }}>
+                Sotuvlar, mijozlar bilan muloqot va kundalik vazifalar bo'yicha sun'iy intellekt maslahatlarini oling.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: '40px', width: '100%', maxWidth: '720px' }}>
+                {quickPrompts.map((prompt, i) => (
+                  <div key={i} onClick={() => handleSend(null, prompt.text)} style={{
+                    background: 'var(--row-hover)', border: '1px solid var(--border)',
+                    padding: '18px', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s',
+                    display: 'flex', flexDirection: 'column', gap: '10px'
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.06)'; e.currentTarget.style.borderColor = 'rgba(124,58,237,0.2)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'var(--row-hover)'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'none'; }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-400)' }}>
+                      {prompt.icon}
+                      <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>{prompt.title}</span>
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.5' }}>{prompt.text}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
-            <div style={{ width: '100%', maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {messages.map((m, i) => (
-                <div key={i} style={{ display: 'flex', gap: '14px', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
-                  {m.role === 'assistant' && <div style={{ width: 28, height: 28, borderRadius: '8px', background: 'var(--primary-500)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', flexShrink: 0, marginTop: '4px' }}><Bot size={14} /></div>}
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
-                    <div style={{ fontSize: '9px', fontWeight: 900, color: 'var(--text-ghost)', textTransform: 'uppercase', marginBottom: '4px' }}>{m.role === 'user' ? 'SIZ' : 'AI SYSTEM'}</div>
-                    <div style={{ 
-                      padding: '12px 16px', borderRadius: '14px',
-                      background: m.role === 'user' ? 'var(--primary-500)' : 'var(--bg-card)',
-                      color: m.role === 'user' ? '#000' : 'var(--text-primary)',
-                      border: '1px solid var(--border-color)', fontSize: '13px', lineHeight: '1.6', fontWeight: 500
-                    }}>
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                <div key={i} style={{
+                  display: 'flex', gap: '12px',
+                  flexDirection: m.role === 'user' ? 'row-reverse' : 'row',
+                  animation: 'fadeIn 0.3s ease'
+                }}>
+                  {m.role === 'assistant' && (
+                    <div style={{ width: 32, height: 32, borderRadius: '10px', background: 'linear-gradient(135deg, var(--primary-500), var(--primary-600))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text)', flexShrink: 0, alignSelf: 'flex-start', marginTop: '2px' }}>
+                      <Bot size={16} />
+                    </div>
+                  )}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: m.role === 'user' ? '65%' : '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 800, color: m.role === 'user' ? 'var(--primary-400)' : 'var(--text-ghost)', textTransform: 'uppercase' }}>
+                        {m.role === 'user' ? 'Siz' : 'AI Yordamchi'}
+                      </span>
+                      {m.createdAt && <span style={{ fontSize: '9px', color: 'var(--text-3)' }}>{formatTime(m.createdAt)}</span>}
+                    </div>
+                    <div className={m.role === 'assistant' ? 'ai-bubble' : 'user-bubble'}>
+                      {m.role === 'assistant' ? (
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {m.content || ' '}
+                        </ReactMarkdown>
+                      ) : m.content}
                     </div>
                   </div>
                 </div>
               ))}
+              {sending && (
+                <div style={{ display: 'flex', gap: '12px', animation: 'fadeIn 0.3s ease' }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '10px', background: 'linear-gradient(135deg, var(--primary-500), var(--primary-600))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text)', flexShrink: 0 }}>
+                    <Bot size={16} />
+                  </div>
+                  <div className="ai-bubble" style={{ padding: '14px 18px' }}>
+                    <div className="typing-dots"><span /><span /><span /></div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Input */}
-        <div style={{ padding: '16px 40px', background: 'var(--bg-card)', borderTop: '1px solid var(--border-color)', flexShrink: 0 }}>
-          <form onSubmit={handleSend} style={{ maxWidth: '1000px', margin: '0 auto', position: 'relative' }}>
+        {/* INPUT */}
+        <div style={{ padding: '16px 24px', background: 'var(--bg-card)', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+          <form onSubmit={handleSend} style={{ position: 'relative' }}>
             <input
-              type="text" value={input} onChange={e => setInput(e.target.value)} disabled={sending}
-              placeholder="Xabar yozish..."
-              style={{ width: '100%', padding: '14px 50px 14px 20px', background: 'var(--bg-deeper)', border: '1px solid var(--border-color)', borderRadius: '12px', color: 'white', fontSize: '13px', outline: 'none' }}
+              ref={inputRef} type="text" value={input} onChange={e => setInput(e.target.value)} disabled={sending}
+              placeholder="Yordamchidan so'rang..."
+              style={{
+                width: '100%', padding: '15px 56px 15px 20px', borderRadius: '14px',
+                background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                color: 'var(--text)', fontSize: '14px', outline: 'none', transition: 'border-color 0.2s',
+                boxSizing: 'border-box'
+              }}
+              onFocus={e => e.target.style.borderColor = 'rgba(124,58,237,0.4)'}
+              onBlur={e => e.target.style.borderColor = 'var(--border)'}
             />
-            <button type="submit" disabled={sending || !input.trim()} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '34px', height: '34px', borderRadius: '10px', background: 'var(--primary-500)', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none' }}>
+            <button type="submit" disabled={sending || !input.trim()} style={{
+              position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
+              width: '38px', height: '38px', borderRadius: '10px',
+              background: input.trim() ? 'var(--primary-500)' : 'var(--bg-elevated)',
+              color: input.trim() ? 'var(--text)' : 'var(--text-3)',
+              border: 'none', cursor: input.trim() ? 'pointer' : 'default',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s'
+            }}>
               <Send size={16} />
             </button>
           </form>
         </div>
       </main>
+
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+        .ai-bubble {
+          background: var(--bg-elevated);
+          border: 1px solid var(--border);
+          border-left: 3px solid var(--primary-500);
+          border-radius: 4px 14px 14px 14px;
+          padding: 16px 20px;
+          color: var(--text);
+          font-size: 14px;
+          line-height: 1.75;
+          width: 100%;
+        }
+        .user-bubble {
+          background: rgba(124,58,237,0.12);
+          border: 1px solid rgba(124,58,237,0.25);
+          border-radius: 14px 14px 4px 14px;
+          padding: 13px 18px;
+          color: var(--text);
+          font-size: 14px;
+          line-height: 1.6;
+        }
+        .ai-bubble p { margin: 0 0 10px 0; }
+        .ai-bubble p:last-child { margin-bottom: 0; }
+        .ai-bubble h1, .ai-bubble h2, .ai-bubble h3 { color: var(--text); margin: 16px 0 8px 0; font-weight: 800; }
+        .ai-bubble h1 { font-size: 17px; }
+        .ai-bubble h2 { font-size: 15px; }
+        .ai-bubble h3 { font-size: 13px; color: var(--primary-400); }
+        .ai-bubble ul, .ai-bubble ol { margin: 8px 0; padding-left: 20px; }
+        .ai-bubble li { margin: 4px 0; color: var(--text-2); }
+        .ai-bubble strong { color: var(--text); font-weight: 700; }
+        .ai-bubble em { color: var(--text-2); }
+        .ai-bubble blockquote { border-left: 3px solid var(--primary-400); margin: 10px 0; padding: 8px 16px; background: rgba(124,58,237,0.06); border-radius: 0 8px 8px 0; color: var(--text-2); }
+        .ai-bubble table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+        .ai-bubble th { background: rgba(124,58,237,0.15); padding: 8px 12px; text-align: left; font-weight: 700; border: 1px solid var(--border); color: var(--text); }
+        .ai-bubble td { padding: 7px 12px; border: 1px solid var(--row-border); color: var(--text-2); }
+        .ai-bubble tr:nth-child(even) td { background: var(--row-hover); }
+        .inline-code { background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.2); padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: monospace; color: var(--primary-300); }
+        .ai-bubble pre { background: var(--bg-deep); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin: 10px 0; overflow-x: auto; }
+        .ai-bubble pre code { background: none; border: none; padding: 0; color: var(--text-2); font-size: 13px; }
+
+        .typing-dots { display: flex; gap: 5px; align-items: center; height: 20px; }
+        .typing-dots span { width: 7px; height: 7px; border-radius: 50%; background: var(--primary-400); animation: typingBounce 1.2s infinite; }
+        .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-6px); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
     </div>
   );
 }

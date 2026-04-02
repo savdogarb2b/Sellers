@@ -8,16 +8,18 @@ export default function SuperadminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [showApiKey, setShowApiKey] = useState(false);
+  const [showDeepseekKey, setShowDeepseekKey] = useState(false);
+  const [testStatus, setTestStatus] = useState(null); // null | 'testing' | 'success' | 'failed'
 
   const [form, setForm] = useState({
-    GEMINI_API_KEY: '',
+    DEEPSEEK_API_KEY: '',
     DEFAULT_MAX_EMPLOYEES: '50',
     DEFAULT_SUBSCRIPTION_PLAN: 'BASIC',
     SYSTEM_NAME: 'SalesCRM',
     LATE_PENALTY_DEFAULT: '50000',
     WORK_START_TIME: '09:00',
     WORK_END_TIME: '18:00',
+    ACTIVE_AI_PROVIDER: 'deepseek',
   });
 
   useEffect(() => { fetchSettings(); }, []);
@@ -39,17 +41,41 @@ export default function SuperadminSettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     setSaved(false);
+    setTestStatus(null);
     try {
       const res = await fetch('/api/superadmin/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, ACTIVE_AI_PROVIDER: 'deepseek' }),
       });
       if (res.ok) {
         const data = await res.json();
         setSettings(data);
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
+
+        // API kalitni test qilish
+        if (form.DEEPSEEK_API_KEY) {
+          setTestStatus('testing');
+          try {
+            const testRes = await fetch('/api/superadmin/ai', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ message: 'hi', test: true }),
+            });
+            if (testRes.ok) {
+              const reader = testRes.body.getReader();
+              const { value } = await reader.read();
+              reader.cancel();
+              setTestStatus(value && value.length > 0 ? 'success' : 'failed');
+            } else {
+              setTestStatus('failed');
+            }
+          } catch {
+            setTestStatus('failed');
+          }
+          setTimeout(() => setTestStatus(null), 5000);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -88,40 +114,46 @@ export default function SuperadminSettingsPage() {
               Sozlamalar muvaffaqiyatli saqlandi
             </div>
           )}
+          {testStatus === 'testing' && (
+            <div style={{ background: 'rgba(124, 58, 237, 0.08)', border: '1px solid rgba(124, 58, 237, 0.2)', padding: '14px 20px', borderRadius: '12px', marginBottom: '24px', fontSize: '11px', fontWeight: 800, color: 'var(--primary-400)', textTransform: 'uppercase', textAlign: 'center', animation: 'fadeIn 0.3s ease' }}>
+              DeepSeek API tekshirilmoqda...
+            </div>
+          )}
+          {testStatus === 'success' && (
+            <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '14px 20px', borderRadius: '12px', marginBottom: '24px', fontSize: '11px', fontWeight: 800, color: '#10b981', textTransform: 'uppercase', textAlign: 'center', animation: 'fadeIn 0.3s ease' }}>
+              ✓ DeepSeek API muvaffaqiyatli ulandi — tizim tayyor!
+            </div>
+          )}
+          {testStatus === 'failed' && (
+            <div style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '14px 20px', borderRadius: '12px', marginBottom: '24px', fontSize: '11px', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', textAlign: 'center', animation: 'fadeIn 0.3s ease' }}>
+              ✗ DeepSeek API xatosi — kalitni tekshiring
+            </div>
+          )}
 
           {/* ===== AI CONFIGURATION ===== */}
           <div className="card glass-panel" style={{ padding: '28px', borderLeft: '4px solid var(--primary-500)' }}>
             <div style={{ fontSize: '12px', fontWeight: 950, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>AI Konfiguratsiya</div>
-            <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '24px' }}>Google Gemini API bilan integratsiya</div>
+            <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '24px' }}>Modellar va API Integratsiyasi</div>
 
-            <div style={{ background: 'rgba(124,58,237,0.04)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(124,58,237,0.08)', marginBottom: '20px', fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 600, lineHeight: '1.6' }}>
-              AI maslahat sahifasi ishlashi uchun Google Gemini API kalitini kiriting.
-              Kalitni <span style={{ color: 'var(--primary-400)', fontWeight: 800 }}>Google AI Studio</span> saytidan olishingiz mumkin.
-              Kalit kiritilmasa, tizim o'rnatilgan oddiy javoblarni ishlatadi.
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Gemini API Kalit</label>
+            <div className="form-group" style={{ marginBottom: '0' }}>
+              <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>DeepSeek API Kalit</label>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <input
                   className="form-input"
-                  type={showApiKey ? 'text' : 'password'}
-                  value={form.GEMINI_API_KEY}
-                  onChange={e => setForm({...form, GEMINI_API_KEY: e.target.value})}
-                  placeholder="AIzaSy..."
+                  type={showDeepseekKey ? 'text' : 'password'}
+                  value={form.DEEPSEEK_API_KEY}
+                  onChange={e => setForm({...form, DEEPSEEK_API_KEY: e.target.value})}
+                  placeholder="sk-..."
                   style={{ flex: 1, fontFamily: 'monospace', fontSize: '13px', letterSpacing: '1px' }}
                 />
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  onClick={() => setShowApiKey(!showApiKey)}
+                  onClick={() => setShowDeepseekKey(!showDeepseekKey)}
                   style={{ fontSize: '9px', fontWeight: 900, padding: '12px 16px', whiteSpace: 'nowrap' }}
                 >
-                  {showApiKey ? 'YASHIRISH' : "KO'RSATISH"}
+                  {showDeepseekKey ? 'YASHIRISH' : "KO'RSATISH"}
                 </button>
-              </div>
-              <div style={{ fontSize: '9px', color: 'var(--text-ghost)', marginTop: '8px', fontWeight: 700 }}>
-                {form.GEMINI_API_KEY ? 'Kalit kiritilgan' : 'Kalit kiritilmagan — oddiy javoblar ishlatiladi'}
               </div>
             </div>
           </div>
@@ -177,7 +209,7 @@ export default function SuperadminSettingsPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
               <InfoBox label="Platforma" value="Next.js 16.2" />
               <InfoBox label="Ma'lumotlar Bazasi" value="SQLite (Prisma ORM)" />
-              <InfoBox label="AI Model" value={form.GEMINI_API_KEY ? 'Gemini 2.0 Flash' : 'Lokal (API yo\'q)'} />
+              <InfoBox label="AI Model" value="DeepSeek-V3" />
               <InfoBox label="Autentifikatsiya" value="NextAuth.js (JWT)" />
               <InfoBox label="Versiya" value="v2.0.0" />
               <InfoBox label="Oxirgi Yangilanish" value={new Date().toLocaleDateString('uz')} />
@@ -191,7 +223,7 @@ export default function SuperadminSettingsPage() {
 
 function InfoBox({ label, value }) {
   return (
-    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.03)' }}>
+    <div style={{ background: 'var(--bg-elevated)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)' }}>
       <div style={{ fontSize: '9px', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>{label}</div>
       <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{value}</div>
     </div>

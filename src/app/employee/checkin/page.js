@@ -107,7 +107,7 @@ export default function CheckinPage() {
               <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '24px', letterSpacing: '1px' }}>Nazorat Punkti</div>
               
               {userData && (
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '32px', marginBottom: '32px', background: 'rgba(0,0,0,0.1)', padding: '20px', borderRadius: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '32px', marginBottom: '32px', background: 'var(--bg-card)', padding: '20px', borderRadius: '16px' }}>
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>Ish boshlash</div>
                     <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--primary-400)' }}>{userData.workStartTime}</div>
@@ -166,7 +166,7 @@ export default function CheckinPage() {
 
                 {todayAttendance && (
                   <div style={{ marginTop: '24px', display: 'flex', gap: '12px', justifyContent: 'center' }}>
-                    <div style={{ padding: '8px 16px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)' }}>
+                    <div style={{ padding: '8px 16px', borderRadius: '12px', background: 'var(--bg-elevated)', border: '1px solid var(--border-color)' }}>
                       <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Kirish</div>
                       <div style={{ fontSize: '14px', fontWeight: 800 }}>{new Date(todayAttendance.checkInTime).toLocaleTimeString('uz', { hour: '2-digit', minute: '2-digit' })}</div>
                     </div>
@@ -197,7 +197,7 @@ export default function CheckinPage() {
                   return (
                     <div key={date.toISOString()} style={{
                       display: 'flex', alignItems: 'center', gap: '16px', padding: '12px',
-                      borderBottom: '1px solid rgba(255,255,255,0.03)',
+                      borderBottom: '1px solid var(--border)',
                       background: isToday ? 'rgba(124,58,237,0.03)' : 'transparent',
                       borderRadius: '12px',
                       marginBottom: '4px'

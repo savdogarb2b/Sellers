@@ -54,7 +54,7 @@ export default function AssignPage() {
       <Navbar />
       <main className="main-content">
         <div className="animate-in">
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', background: 'rgba(255,255,255,0.03)', padding: '6px', borderRadius: '14px', width: 'fit-content' }}>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', background: 'var(--bg-elevated)', padding: '6px', borderRadius: '14px', width: 'fit-content' }}>
             <button className={`btn ${tab === 'penalty' ? 'btn-danger' : 'btn-secondary'}`} style={{ border: 'none', borderRadius: '10px' }} onClick={() => setTab('penalty')}>
                Jarimalar
             </button>
@@ -71,16 +71,16 @@ export default function AssignPage() {
               <form onSubmit={handleSubmit}>
                 <div className="form-group">
                   <label className="form-label">Xodim *</label>
-                  <select className="form-input" value={form.userId} onChange={e => setForm({...form, userId: e.target.value})} required style={{ background: 'rgba(0,0,0,0.2)' }}>
-                    <option value="" style={{background:'#0f172a'}}>Xodimni tanlang...</option>
-                    {employees.map(e => <option key={e.id} value={e.id} style={{background:'#0f172a'}}>{e.name}</option>)}
+                  <select className="form-input" value={form.userId} onChange={e => setForm({...form, userId: e.target.value})} required style={{ background: 'var(--bg-card)' }}>
+                    <option value="" style={{background:'var(--bg-card)'}}>Xodimni tanlang...</option>
+                    {employees.map(e => <option key={e.id} value={e.id} style={{background:'var(--bg-card)'}}>{e.name}</option>)}
                   </select>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Shablon</label>
-                  <select className="form-input" value={form.templateId} onChange={e => handleTemplateSelect(e.target.value)} style={{ background: 'rgba(0,0,0,0.2)' }}>
-                    <option value="" style={{background:'#0f172a'}}>Shablondan tanlang...</option>
-                    {templates.map(t => <option key={t.id} value={t.id} style={{background:'#0f172a'}}>{t.reason} ({t.amount.toLocaleString()} so'm)</option>)}
+                  <select className="form-input" value={form.templateId} onChange={e => handleTemplateSelect(e.target.value)} style={{ background: 'var(--bg-card)' }}>
+                    <option value="" style={{background:'var(--bg-card)'}}>Shablondan tanlang...</option>
+                    {templates.map(t => <option key={t.id} value={t.id} style={{background:'var(--bg-card)'}}>{t.reason} ({t.amount.toLocaleString()} so'm)</option>)}
                   </select>
                 </div>
                 <div className="form-group"><label className="form-label">Sabab *</label><input className="form-input" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} required placeholder="Asoslantirilgan sabab..." /></div>
@@ -98,14 +98,14 @@ export default function AssignPage() {
               ) : (
                 <div style={{ maxHeight: '600px', overflowY: 'auto', paddingRight: '8px' }}>
                   {records.map((r, i) => (
-                    <div key={r.id} className="animate-in" style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center', 
-                      padding: '16px', 
+                    <div key={r.id} className="animate-in" style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '16px',
                       borderRadius: '12px',
-                      background: 'rgba(255,255,255,0.02)',
-                      border: '1px solid rgba(255,255,255,0.05)',
+                      background: 'var(--bg-elevated)',
+                      border: '1px solid var(--border)',
                       marginBottom: '12px',
                       animationDelay: `${i * 0.05}s`
                     }}>

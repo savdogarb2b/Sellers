@@ -157,9 +157,29 @@ export default function EmployeesPage() {
                     </div>
 
                     {isOpen && (
-                      <div className="animate-in" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', display: 'flex', gap: '8px' }}>
-                        <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={(e) => openEdit(emp, e)}>Tahrirlash</button>
-                        <button className="btn btn-danger btn-sm" style={{ flex: 1 }} onClick={(e) => handleDelete(emp.id, e)}>O'chirish</button>
+                      <div className="animate-in" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button className="btn btn-secondary btn-sm" style={{ flex: '1 1 calc(50% - 4px)' }} onClick={(e) => openEdit(emp, e)}>Tahrirlash</button>
+                        <button className="btn btn-secondary btn-sm" style={{ flex: '1 1 calc(50% - 4px)' }} onClick={(e) => {
+                          e.stopPropagation();
+                          if(confirm('Foydalanuvchi parolini yangilashni xohlaysizmi?')) {
+                            fetch('/api/employees/reset-password', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ id: emp.id })
+                            })
+                            .then(r => r.json())
+                            .then(res => {
+                              if(res.success) {
+                                setShowCredentials({ login: res.login, password: res.newPassword, empName: res.empName });
+                              } else {
+                                alert(res.error || 'Qandaydir xatolik yuz berdi');
+                              }
+                            });
+                          }
+                        }}>
+                          Parolni Yangilash
+                        </button>
+                        <button className="btn btn-danger btn-sm" style={{ flex: '1 1 100%' }} onClick={(e) => handleDelete(emp.id, e)}>O'chirish</button>
                       </div>
                     )}
                   </div>
@@ -170,7 +190,7 @@ export default function EmployeesPage() {
         </div>
 
         {showModal && (
-          <div className="modal-overlay" style={{ backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.6)' }}>
+          <div className="modal-overlay" style={{ backdropFilter: 'blur(4px)', background: 'var(--bg-card)' }}>
             <div className="card glass-panel modal" style={{ maxWidth: '540px', padding: '0', background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
               <div className="modal-header" style={{ borderBottom: '1px solid var(--border-color)', padding: '16px 24px' }}>
                 <div style={{ fontSize: '14px', fontWeight: 700 }}>{editEmp ? 'Xodimni tahrirlash' : 'Yangi xodim qo\'shish'}</div>
@@ -233,7 +253,7 @@ export default function EmployeesPage() {
         )}
 
         {showCredentials && (
-          <div className="modal-overlay" style={{ backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.6)' }}>
+          <div className="modal-overlay" style={{ backdropFilter: 'blur(4px)', background: 'var(--bg-card)' }}>
              <div className="card glass-panel modal" style={{ maxWidth: '440px', padding: '0', background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
                 <div className="modal-header" style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-color)' }}>
                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Kirish ma'lumotlari</div>

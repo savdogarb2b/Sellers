@@ -181,7 +181,7 @@ export default function StrategyPage() {
         </div>
 
         {showModal && (
-          <div className="modal-overlay" onClick={() => setShowModal(false)} style={{ backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.6)' }}>
+          <div className="modal-overlay" onClick={() => setShowModal(false)} style={{ backdropFilter: 'blur(4px)', background: 'var(--bg-card)' }}>
             <div className="card glass-panel modal" style={{ maxWidth: '540px', padding: '0', background: 'var(--bg-card)', border: '1px solid var(--border-color)' }} onClick={e => e.stopPropagation()}>
               <div className="modal-header" style={{ borderBottom: '1px solid var(--border-color)', padding: '16px 24px' }}>
                 <div style={{ fontSize: '14px', fontWeight: 700 }}>Yangi sotuv strategiyasi</div>
@@ -220,7 +220,7 @@ export default function StrategyPage() {
         )}
 
         {showDistributeModal && (
-          <div className="modal-overlay" onClick={() => setShowDistributeModal(null)} style={{ backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.6)', zIndex: 100 }}>
+          <div className="modal-overlay" onClick={() => setShowDistributeModal(null)} style={{ backdropFilter: 'blur(4px)', background: 'var(--bg-card)', zIndex: 100 }}>
             <div className="card glass-panel modal" style={{ maxWidth: '440px', padding: '0', background: 'var(--bg-card)', border: '1px solid var(--border-color)' }} onClick={e => e.stopPropagation()}>
               <div className="modal-header" style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-color)' }}>
                 <div>

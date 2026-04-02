@@ -101,16 +101,16 @@ export default function EmployeeRatingsPage() {
                     return (
                       <div key={r.id} style={{
                         display: 'flex', alignItems: 'center', gap: '16px', padding: '12px 16px',
-                        background: isMe ? 'rgba(124,58,237,0.05)' : 'rgba(255,255,255,0.01)',
+                        background: isMe ? 'rgba(124,58,237,0.05)' : 'var(--bg-elevated)',
                         borderRadius: '12px',
-                        border: isMe ? '1px solid rgba(124,58,237,0.1)' : '1px solid rgba(255,255,255,0.03)',
+                        border: isMe ? '1px solid rgba(124,58,237,0.1)' : '1px solid var(--border)',
                         transition: 'all 0.2s ease'
                       }}>
                         <div style={{ 
                           width: '32px', height: '32px', borderRadius: '8px', 
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: '14px', fontWeight: 950, color: i < 3 ? '#0f172a' : 'var(--text-muted)',
-                          background: i < 3 ? rankColor : 'rgba(255,255,255,0.05)'
+                          background: i < 3 ? rankColor : 'var(--bg-elevated)'
                         }}>
                           {i + 1}
                         </div>

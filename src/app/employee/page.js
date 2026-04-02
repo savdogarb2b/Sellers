@@ -11,7 +11,7 @@ function DonutChart({ percent, color = 'var(--primary-500)', size = 80 }) {
   const dash = (Math.min(percent, 100) / 100) * circ;
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
-      <circle cx="50" cy="50" r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
+      <circle cx="50" cy="50" r={r} fill="none" stroke="var(--border-2)" strokeWidth="10" />
       <circle cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth="10" strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" style={{ transition: 'stroke-dasharray 1s ease-out' }} />
     </svg>
   );
@@ -170,7 +170,7 @@ export default function EmployeeDashboard() {
             </div>
             <div style={{ display: 'flex', gap: '16px' }}>
               {streak >= 3 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '8px 16px', borderRadius: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--rose-glow)', border: '1px solid rgba(244,63,94,0.2)', padding: '8px 16px', borderRadius: '12px' }}>
                   <span style={{ fontSize: '18px' }}>🔥</span>
                   <div>
                     <div style={{ fontSize: '12px', fontWeight: 900, color: 'var(--danger-500)' }}>{streak} Kun Streak</div>
@@ -179,7 +179,7 @@ export default function EmployeeDashboard() {
                 </div>
               )}
               {conversion > 20 && currentMonthSales >= 5 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(124, 58, 237, 0.1)', border: '1px solid rgba(124, 58, 237, 0.2)', padding: '8px 16px', borderRadius: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--violet-glow)', border: '1px solid rgba(139,92,246,0.2)', padding: '8px 16px', borderRadius: '12px' }}>
                   <span style={{ fontSize: '18px' }}>💎</span>
                   <div>
                     <div style={{ fontSize: '12px', fontWeight: 900, color: '#a78bfa' }}>Usta Konversiya</div>
@@ -191,7 +191,7 @@ export default function EmployeeDashboard() {
             </div>
           </div>
 
-          <div style={{ background: 'linear-gradient(90deg, rgba(124,58,237,0.1), transparent)', borderLeft: '4px solid var(--primary-500)', padding: '16px 20px', borderRadius: '12px', marginBottom: '24px', display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <div style={{ background: 'linear-gradient(90deg, var(--primary-ghost), transparent)', borderLeft: '4px solid var(--primary)', padding: '16px 20px', borderRadius: '12px', marginBottom: '24px', display: 'flex', gap: '16px', alignItems: 'center', border: '1px solid var(--border)' }}>
             <div style={{ fontSize: '24px' }}>🤖</div>
             <div>
               <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--primary-400)', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '1px' }}>AI Maslahat</div>
@@ -260,7 +260,7 @@ export default function EmployeeDashboard() {
                 <div style={{ fontSize: '13px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>Faollik Dinamikasi (14 Kun)</div>
                 <div style={{ display: 'flex', gap: '16px' }}>
                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                    <div style={{ width: '8px', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px' }}/> 
+                    <div style={{ width: '8px', height: '8px', background: 'var(--border-2)', borderRadius: '2px' }}/> 
                     <span style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Qo'ng'iroq</span>
                   </div>
                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -276,7 +276,7 @@ export default function EmployeeDashboard() {
                   return (
                     <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                       <div style={{ display: 'flex', gap: '2px', alignItems: 'flex-end', height: '120px', width: '100%', justifyContent: 'center' }}>
-                        <div style={{ height: `${pCalls}%`, width: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px 4px 0 0', position: 'relative' }} title={`Qo'ng'iroqlar: ${d.calls}`}>
+                        <div style={{ height: `${pCalls}%`, width: '8px', background: 'var(--border-2)', borderRadius: '4px 4px 0 0', position: 'relative' }} title={`Qo'ng'iroqlar: ${d.calls}`}>
                           <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', fontSize: '8px', color: 'var(--text-muted)', marginBottom: '4px' }}>{d.calls}</div>
                         </div>
                         <div style={{ height: `${pSales}%`, width: '8px', background: 'var(--accent-teal)', borderRadius: '4px 4px 0 0', boxShadow: pSales > 0 ? '0 0 8px rgba(16,185,129,0.3)' : 'none', position: 'relative' }} title={`Sotuvlar: ${d.sales}`}>
@@ -302,7 +302,7 @@ export default function EmployeeDashboard() {
                           <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>{stage.name}</span>
                           <span style={{ fontSize: '14px', fontWeight: 900, color: 'var(--primary-400)' }}>{stage.count}</span>
                         </div>
-                        <div style={{ height: '8px', background: 'rgba(255,255,255,0.04)', borderRadius: '10px', overflow: 'hidden' }}>
+                        <div style={{ height: '8px', background: 'var(--border)', borderRadius: '10px', overflow: 'hidden' }}>
                           <div style={{ width: `${pct}%`, height: '100%', background: `linear-gradient(90deg, var(--primary-500), var(--accent-blue))`, borderRadius: '10px' }} />
                         </div>
                       </div>
@@ -319,7 +319,7 @@ export default function EmployeeDashboard() {
       </main>
 
       {showSalaryModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={() => setShowSalaryModal(false)}>
+        <div style={{ position: 'fixed', inset: 0, background: 'var(--bg-overlay)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={() => setShowSalaryModal(false)}>
           <div className="card glass-panel animate-in" style={{ width: '100%', maxWidth: '400px', padding: '24px', position: 'relative' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
@@ -332,20 +332,20 @@ export default function EmployeeDashboard() {
               >×</button>
             </div>
             
-            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '12px', marginBottom: '20px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ background: 'var(--primary-ghost)', padding: '16px', borderRadius: '12px', marginBottom: '20px', textAlign: 'center', border: '1px solid var(--border-focus)' }}>
               <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>Yakuniy Miqdor</div>
               <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-1px' }}>{netSalary.toLocaleString()} UZS</div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto', paddingRight: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--bg-elevated)', borderRadius: '8px', border: '1px solid var(--border)' }}>
                 <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Fikslangan oylik</span>
                 <span style={{ fontSize: '13px', fontWeight: 800 }}>{fixedSalary.toLocaleString()}</span>
               </div>
               
               <div style={{ margin: '8px 0', fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Bonuslar (+{(totalBonuses).toLocaleString()})</div>
               {bonuses.length === 0 ? <div style={{ fontSize: '11px', color: 'var(--text-ghost)', fontStyle: 'italic', paddingLeft: '8px' }}>Mavjud emas</div> : bonuses.map(b => (
-                <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '8px', borderLeft: '3px solid var(--accent-teal)' }}>
+                <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--emerald-glow)', borderRadius: '8px', borderLeft: '3px solid var(--emerald)' }}>
                   <div>
                     <div style={{ fontSize: '11px', fontWeight: 700 }}>{b.reason}</div>
                     <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '2px' }}>{new Date(b.date).toLocaleDateString()}</div>
@@ -356,7 +356,7 @@ export default function EmployeeDashboard() {
 
               <div style={{ margin: '8px 0', fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Jarimalar (-{(totalPenalties).toLocaleString()})</div>
               {penalties.length === 0 ? <div style={{ fontSize: '11px', color: 'var(--text-ghost)', fontStyle: 'italic', paddingLeft: '8px' }}>Mavjud emas</div> : penalties.map(p => (
-                <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '8px', borderLeft: '3px solid var(--danger-500)' }}>
+                <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--rose-glow)', borderRadius: '8px', borderLeft: '3px solid var(--rose)' }}>
                   <div>
                     <div style={{ fontSize: '11px', fontWeight: 700 }}>{p.reason}</div>
                     <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '2px' }}>{new Date(p.date).toLocaleDateString()}</div>
