@@ -24,7 +24,6 @@ async function main() {
   // Delete users except Superadmin (or just delete all and recreate)
   await prisma.user.deleteMany({});
   await prisma.organization.deleteMany({});
-  await prisma.systemSettings.deleteMany({});
 
   console.log('✨ Baza tozalandi.');
 
@@ -39,15 +38,6 @@ async function main() {
     }
   });
   console.log('✅ Superadmin yaratildi:', superadmin.email);
-
-  // Set NEW Gemini API Key
-  await prisma.systemSettings.create({
-    data: {
-      key: 'GEMINI_API_KEY',
-      value: ''
-    }
-  });
-  console.log('✅ Yangi Gemini API Key saqlandi.');
 
   console.log('🎉 Tizim toza holatga keltirildi!');
 }

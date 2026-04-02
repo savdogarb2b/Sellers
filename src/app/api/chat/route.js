@@ -21,101 +21,80 @@ export async function POST(request) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { message } = await request.json();
   const userId = session.user.id;
+  const userExists = await prisma.user.findUnique({ where: { id: userId } });
+  if (!userExists) {
+    return NextResponse.json({ error: 'Foydalanuvchi topilmadi. Iltimos, tizimdan chiqib qayta kiring (Logout/Login).' }, { status: 401 });
+  }
 
-  // Save user message
+  const { message } = await request.json();
+
+  const setting = await prisma.systemSettings.findUnique({ where: { key: 'DEEPSEEK_API_KEY' } });
+  const apiKey = setting?.value;
+  if (!apiKey) {
+    return NextResponse.json({ error: 'DeepSeek API kaliti kiritilmagan. Superadmin sozlamalaridan kiriting.' }, { status: 500 });
+  }
+
   await prisma.chatMessage.create({
     data: { userId, role: 'user', content: message },
   });
 
-  // Get API key
-  const setting = await prisma.systemSettings.findUnique({ where: { key: 'GEMINI_API_KEY' } });
-  if (!setting?.value) {
-    return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
-  }
-
-  // Robust Stream Parsing
+  const systemPrompt = "Sen SalesCRM yordamchisiz. O'zbek tilida, markdown formatida javob ber.";
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:streamGenerateContent?key=${setting.value}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{
-                parts: [{
-                  text: `Sen SalesCRM yordamchisiz. O'zbek tilida qisqa va aniq javob ber. Markdown formatidan foydalan.
-USER: ${message}`
-                }]
-              }],
-              generationConfig: { temperature: 0.7, maxOutputTokens: 1500 },
-            })
-          }
-        );
+        let fullText = '';
+        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: message }],
+            stream: true,
+            temperature: 0.5
+          })
+        });
 
-        if (!response.ok) throw new Error('Gemini API error');
+        if (!response.ok) throw new Error('DeepSeek API error');
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        let fullText = '';
-        let jsonBuffer = '';
-
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-
-          jsonBuffer += decoder.decode(value, { stream: true });
-          
-          let match;
-          const textRegex = /"text":\s*"((?:[^"\\]|\\.)*)"/g;
-          let lastIndex = 0;
-          
-          while ((match = textRegex.exec(jsonBuffer)) !== null) {
-            const foundText = match[1]
-              .replace(/\\n/g, '\n')
-              .replace(/\\"/g, '"')
-              .replace(/\\\\/g, '\\');
-              
-            fullText += foundText;
-            controller.enqueue(encoder.encode(foundText));
-            lastIndex = textRegex.lastIndex;
+          const chunk = decoder.decode(value);
+          for (const line of chunk.split('\n')) {
+            if (line.startsWith('data: ') && line.trim() !== 'data: [DONE]') {
+              try {
+                const data = JSON.parse(line.slice(6));
+                const content = data.choices[0]?.delta?.content || '';
+                if (content) { fullText += content; controller.enqueue(encoder.encode(content)); }
+              } catch (e) {}
+            }
           }
-          
-          jsonBuffer = jsonBuffer.substring(lastIndex);
         }
 
-        // Save AI message
         if (fullText) {
-          await prisma.chatMessage.create({
-            data: { userId, role: 'assistant', content: fullText },
-          });
+          await prisma.chatMessage.create({ data: { userId, role: 'assistant', content: fullText } });
         }
-
         controller.close();
       } catch (error) {
         console.error('Streaming error:', error);
-        controller.enqueue(encoder.encode('Xatolik yuz berdi. Iltimos qaytadan urinib ko\'ring.'));
+        controller.enqueue(encoder.encode('Xatolik yuz berdi. Iltimos qayta urinib ko\'ring.'));
         controller.close();
       }
     }
   });
 
   return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'Cache-Control': 'no-cache',
-    }
+    headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache' }
   });
 }
 
 export async function DELETE() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
   await prisma.chatMessage.deleteMany({ where: { userId: session.user.id } });
   return NextResponse.json({ success: true });
 }
