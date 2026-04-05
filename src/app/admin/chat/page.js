@@ -16,19 +16,43 @@ export default function AdminChatPage() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sessions, setSessions] = useState([]);
+  const [currentSessionId, setCurrentSessionId] = useState('');
   const chatRef = useRef(null);
   const inputRef = useRef(null);
 
   useEffect(() => { fetchData(); }, []);
   useEffect(() => { if (chatRef.current) { chatRef.current.scrollTop = chatRef.current.scrollHeight; } }, [messages]);
 
+  // Fetch messages when session changes
+  useEffect(() => {
+    const fetchSessionMessages = async () => {
+      setLoading(true);
+      if (!currentSessionId) {
+        setMessages([]);
+      } else {
+        try {
+          const res = await fetch(`/api/chat/sessions/${currentSessionId}`);
+          const msgs = await res.json();
+          setMessages(Array.isArray(msgs) ? msgs : []);
+        } catch (e) { setMessages([]); }
+      }
+      setLoading(false);
+    };
+    fetchSessionMessages();
+  }, [currentSessionId]);
+
   const fetchData = async () => {
     try {
-      const msgRes = await fetch('/api/chat');
-      const msgs = await msgRes.json();
-      setMessages(Array.isArray(msgs) ? msgs : []);
-    } catch (e) {}
-    setLoading(false);
+      const sessRes = await fetch('/api/chat/sessions');
+      const sess = await sessRes.json();
+      setSessions(Array.isArray(sess) ? sess : []);
+      if (Array.isArray(sess) && sess.length > 0) {
+        setCurrentSessionId(sess[0].id);
+      } else {
+        setLoading(false);
+      }
+    } catch (e) { setLoading(false); }
   };
 
   const handleSend = async (e, textOverride) => {
@@ -44,11 +68,25 @@ export default function AdminChatPage() {
     setMessages(prev => [...prev, { id: aiMsgId, role: 'assistant', content: '', createdAt: new Date() }]);
     setSending(true);
 
+    let targetSessionId = currentSessionId;
+    if (!targetSessionId) {
+      try {
+        const sessRes = await fetch('/api/chat/sessions', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: userMsg.slice(0, 30) + (userMsg.length > 30 ? '...' : '') })
+        });
+        const newSess = await sessRes.json();
+        targetSessionId = newSess.id;
+        setCurrentSessionId(targetSessionId);
+        setSessions(prev => [newSess, ...prev]);
+      } catch (e) {}
+    }
+
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMsg }),
+        body: JSON.stringify({ message: userMsg, sessionId: targetSessionId }),
       });
 
       if (!res.ok) throw new Error('Stream error');
@@ -71,8 +109,16 @@ export default function AdminChatPage() {
   };
 
   const clearHistory = async () => {
-    if (!confirm('Suhbat tarixini tozalashni xohlaysizmi?')) return;
-    await fetch('/api/chat', { method: 'DELETE' });
+    if (!currentSessionId) return;
+    if (!confirm('Ushbu suhbat tarixini tozalashni va o\'chirishni xohlaysizmi?')) return;
+    await fetch(`/api/chat/sessions/${currentSessionId}`, { method: 'DELETE' });
+    setSessions(prev => prev.filter(s => s.id !== currentSessionId));
+    setCurrentSessionId('');
+    setMessages([]);
+  };
+
+  const startNewSession = () => {
+    setCurrentSessionId('');
     setMessages([]);
   };
 
@@ -143,22 +189,19 @@ export default function AdminChatPage() {
     <div className="app-layout">
       <Sidebar />
       <Navbar />
-      <main className="main-content" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--navbar-height))', padding: 0 }}>
+      <main className="main-content" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--navbar-height))', padding: 0, position: 'relative' }}>
 
         {/* HEADER */}
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: '14px 24px',
-          background: 'var(--bg-card)',
-          backdropFilter: 'blur(20px)',
-          borderBottom: '1px solid var(--border)',
-          flexShrink: 0,
+          padding: '14px 24px', background: 'var(--bg-card)', backdropFilter: 'blur(20px)',
+          borderBottom: '1px solid var(--border)', flexShrink: 0, zIndex: 10
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
               width: 38, height: 38, borderRadius: '10px',
               background: 'linear-gradient(135deg, var(--primary-500), var(--primary-600))',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff'
             }}>
               <Bot size={20} />
             </div>
@@ -170,94 +213,134 @@ export default function AdminChatPage() {
               </div>
             </div>
           </div>
-          {messages.length > 0 && (
-            <button onClick={clearHistory} className="btn btn-danger btn-sm" style={{ fontSize: '10px', fontWeight: 800, padding: '8px 14px' }}>
-              <Trash2 size={12} /> Tozalash
-            </button>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <select
+              value={currentSessionId}
+              onChange={e => {
+                if (e.target.value === 'new') startNewSession();
+                else setCurrentSessionId(e.target.value);
+              }}
+              style={{
+                fontSize: '11px', fontWeight: 800, padding: '10px 16px',
+                background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)',
+                borderRadius: '12px', outline: 'none', cursor: 'pointer', maxWidth: '200px'
+              }}
+            >
+              <option value="new">+ Yangi Suhbat</option>
+              {sessions.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
+            </select>
+
+            {messages.length > 0 && (
+              <button onClick={clearHistory} className="btn-hover" style={{
+                background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)',
+                fontSize: '11px', fontWeight: 700, padding: '8px 12px', borderRadius: '8px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s'
+              }}>
+                <Trash2 size={14} /> Tozalash
+              </button>
+            )}
+          </div>
         </div>
 
         {/* CHAT AREA */}
         <div ref={chatRef} className="custom-scrollbar" style={{
-          flex: 1, overflowY: 'auto', padding: '24px',
-          background: 'var(--bg-base)', scrollBehavior: 'smooth'
+          flex: 1, overflowY: 'auto', background: 'var(--bg-base)', scrollBehavior: 'smooth',
+          display: 'flex', flexDirection: 'column', paddingBottom: '160px'
         }}>
           {loading ? (
             <div className="loading-container" style={{ minHeight: '300px' }}><div className="loading-spinner" /></div>
           ) : messages.length === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '65vh', animation: 'fadeIn 0.5s ease' }}>
-              <div style={{ width: 72, height: 72, borderRadius: '20px', background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-                <Sparkles size={32} style={{ color: 'var(--primary-500)' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, animation: 'fadeIn 0.5s ease', padding: '40px 20px' }}>
+              <div style={{ width: 64, height: 64, borderRadius: '20px', background: 'linear-gradient(135deg, var(--primary-500), var(--primary-600))', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px', boxShadow: '0 10px 25px -5px rgba(124,58,237,0.4)' }}>
+                <Sparkles size={32} style={{ color: '#fff' }} />
               </div>
-              <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '2px' }}>Ilg'or AI Tahlilchi</div>
-              <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '10px', textAlign: 'center', maxWidth: '400px', lineHeight: '1.7' }}>
+              <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text)', marginBottom: '12px', textAlign: 'center' }}>Salom, men sizning AI Tahlilchingizman</h1>
+              <p style={{ color: 'var(--text-muted)', fontSize: '15px', textAlign: 'center', maxWidth: '500px', lineHeight: '1.6', marginBottom: '40px' }}>
                 KPI, moliyaviy tahlil va xodimlar hisobotini yuritish bo'yicha sun'iy intellekt maslahatlarini oling.
               </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: '40px', width: '100%', maxWidth: '720px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', width: '100%', maxWidth: '700px' }}>
                 {quickPrompts.map((prompt, i) => (
-                  <div key={i} onClick={() => handleSend(null, prompt.text)} style={{
-                    background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                    padding: '18px', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s',
-                    display: 'flex', flexDirection: 'column', gap: '10px'
-                  }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.06)'; e.currentTarget.style.borderColor = 'rgba(124,58,237,0.2)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-elevated)'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'none'; }}
-                  >
+                  <button key={i} onClick={() => handleSend(null, prompt.text)} className="btn-hover" style={{
+                    background: 'var(--bg-card)', border: '1px solid var(--border)',
+                    padding: '16px', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s',
+                    display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left'
+                  }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-400)' }}>
                       {prompt.icon}
-                      <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase' }}>{prompt.title}</span>
+                      <span style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase' }}>{prompt.title}</span>
                     </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.5' }}>{prompt.text}</div>
-                  </div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.4' }}>{prompt.text}</div>
+                  </button>
                 ))}
               </div>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', paddingBottom: '20px' }}>
               {messages.map((m, i) => (
-                <div key={i} style={{
-                  display: 'flex', gap: '12px',
-                  flexDirection: m.role === 'user' ? 'row-reverse' : 'row',
-                  animation: 'fadeIn 0.3s ease'
-                }}>
-                  {m.role === 'assistant' && (
-                    <div style={{ width: 32, height: 32, borderRadius: '10px', background: 'linear-gradient(135deg, var(--primary-500), var(--primary-600))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text)', flexShrink: 0, alignSelf: 'flex-start', marginTop: '2px' }}>
-                      <Bot size={16} />
-                    </div>
-                  )}
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: m.role === 'user' ? '65%' : '100%' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                      <span style={{ fontSize: '10px', fontWeight: 800, color: m.role === 'user' ? 'var(--primary-400)' : 'var(--text-ghost)', textTransform: 'uppercase' }}>
-                        {m.role === 'user' ? 'Siz' : 'AI Tahlilchi'}
-                      </span>
-                      {m.createdAt && <span style={{ fontSize: '9px', color: 'var(--text-3)' }}>{formatTime(m.createdAt)}</span>}
-                    </div>
-                    <div className={m.role === 'assistant' ? 'ai-bubble' : 'user-bubble'}>
+                <div key={i} style={{ width: '100%', padding: '16px 20px', background: 'transparent' }}>
+                  <div style={{ maxWidth: '850px', margin: '0 auto', display: 'flex', flexDirection: m.role === 'user' ? 'row-reverse' : 'row', gap: '20px' }}>
+                    
+                    <div style={{ flexShrink: 0, marginTop: '2px' }}>
                       {m.role === 'assistant' ? (
-                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
-                          code({ node, inline, className, children, ...props }) {
-                            const match = /language-(\w+)/.exec(className || '');
-                            const content = String(children).replace(/\n$/, '');
-                            if (!inline && (match?.[1] === 'chart' || (content.startsWith('{') && content.includes('"type"')))) {
-                              return <ChartRenderer jsonStr={content} />;
-                            }
-                            return <code className={`inline-code ${className || ''}`} {...props}>{children}</code>;
-                          }
-                        }}>
-                          {m.content || ' '}
-                        </ReactMarkdown>
-                      ) : m.content}
+                        <div style={{ width: 36, height: 36, borderRadius: '12px', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', boxShadow: 'var(--shadow-sm)' }}>
+                          <Bot size={20} />
+                        </div>
+                      ) : (
+                        <div style={{ width: 36, height: 36, borderRadius: '12px', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+                          <span style={{ fontSize: '14px', fontWeight: 800 }}>U</span>
+                        </div>
+                      )}
                     </div>
+
+                    <div style={{ 
+                      flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', 
+                      alignItems: m.role === 'user' ? 'flex-end' : 'flex-start' 
+                    }}>
+                      <div style={{ fontSize: '11px', fontWeight: 900, color: m.role === 'assistant' ? 'var(--primary)' : 'var(--text-3)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        {m.role === 'assistant' ? 'AI Tahlilchi' : 'Siz'}
+                      </div>
+                      
+                      {m.role === 'assistant' ? (
+                        <div className="claude-prose" style={{ width: '100%' }}>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
+                            code({ node, inline, className, children, ...props }) {
+                              const match = /language-(\w+)/.exec(className || '');
+                              const content = String(children).replace(/\n$/, '');
+                              if (!inline && (match?.[1] === 'chart' || (content.startsWith('{') && content.includes('"type"')))) {
+                                return <ChartRenderer jsonStr={content} />;
+                              }
+                              return <code className={`inline-code ${className || ''}`} {...props}>{children}</code>;
+                            }
+                          }}>
+                            {m.content || ' '}
+                          </ReactMarkdown>
+                        </div>
+                      ) : (
+                        <div style={{
+                          background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                          padding: '16px 20px', borderRadius: '20px 4px 20px 20px',
+                          color: 'var(--text)', fontSize: '15.5px', lineHeight: '1.6',
+                          boxShadow: 'var(--shadow-sm)', maxWidth: '90%', whiteSpace: 'pre-wrap'
+                        }}>
+                          {m.content}
+                        </div>
+                      )}
+                    </div>
+
                   </div>
                 </div>
               ))}
               {sending && (
-                <div style={{ display: 'flex', gap: '12px', animation: 'fadeIn 0.3s ease' }}>
-                  <div style={{ width: 32, height: 32, borderRadius: '10px', background: 'linear-gradient(135deg, var(--primary-500), var(--primary-600))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text)', flexShrink: 0 }}>
-                    <Bot size={16} />
-                  </div>
-                  <div className="ai-bubble" style={{ padding: '14px 18px' }}>
-                    <div className="typing-dots"><span /><span /><span /></div>
+                <div style={{ width: '100%', padding: '24px 20px', background: 'transparent' }}>
+                  <div style={{ maxWidth: '850px', margin: '0 auto', display: 'flex', gap: '20px' }}>
+                    <div style={{ flexShrink: 0, marginTop: '2px' }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '8px', background: 'linear-gradient(135deg, var(--primary-500), var(--primary-600))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                        <Bot size={18} />
+                      </div>
+                    </div>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', height: '32px' }}>
+                      <div className="typing-pulse" />
+                    </div>
                   </div>
                 </div>
               )}
@@ -265,85 +348,120 @@ export default function AdminChatPage() {
           )}
         </div>
 
-        {/* INPUT */}
-        <div style={{ padding: '16px 24px', background: 'var(--bg-card)', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
-          <form onSubmit={handleSend} style={{ position: 'relative' }}>
-            <input
-              ref={inputRef} type="text" value={input} onChange={e => setInput(e.target.value)} disabled={sending}
-              placeholder="Tizim bo'yicha tahliliy savol yozing..."
-              style={{
-                width: '100%', padding: '15px 56px 15px 20px', borderRadius: '14px',
-                background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                color: 'var(--text)', fontSize: '14px', outline: 'none', transition: 'border-color 0.2s',
-                boxSizing: 'border-box'
-              }}
-              onFocus={e => e.target.style.borderColor = 'rgba(124,58,237,0.4)'}
-              onBlur={e => e.target.style.borderColor = 'var(--border)'}
-            />
-            <button type="submit" disabled={sending || !input.trim()} style={{
-              position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
-              width: '38px', height: '38px', borderRadius: '10px',
-              background: input.trim() ? 'var(--primary-500)' : 'var(--bg-elevated)',
-              color: input.trim() ? 'var(--text)' : 'var(--text-3)',
-              border: 'none', cursor: input.trim() ? 'pointer' : 'default',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s'
+        {/* INPUT FIXED AT BOTTOM */}
+        <div style={{ 
+          position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 20px 24px', 
+          background: 'linear-gradient(to top, var(--bg-base) 70%, transparent)' 
+        }}>
+          <div style={{ maxWidth: '850px', margin: '0 auto', position: 'relative' }}>
+            <form onSubmit={handleSend} style={{ 
+              position: 'relative', background: 'var(--bg-elevated)', 
+              border: '1px solid rgba(124,58,237,0.3)', borderRadius: '20px', 
+              boxShadow: '0 12px 30px -10px rgba(0,0,0,0.4)',
+              display: 'flex', flexDirection: 'column'
             }}>
-              <Send size={16} />
-            </button>
-          </form>
+              <textarea
+                ref={inputRef} value={input} onChange={e => setInput(e.target.value)} disabled={sending}
+                placeholder="AI ga xabar yuborish..."
+                style={{
+                  width: '100%', padding: '16px 20px', background: 'transparent', border: 'none', 
+                  color: 'var(--text)', fontSize: '15px', outline: 'none', resize: 'none', 
+                  maxHeight: '200px', minHeight: '56px', overflowY: 'auto', fontFamily: 'inherit'
+                }}
+                rows={1}
+                onInput={(e) => {
+                  e.target.style.height = 'auto';
+                  e.target.style.height = (e.target.scrollHeight) + 'px';
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend(e);
+                  }
+                }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                   {/* optional buttons like attach could go here */}
+                </div>
+                <button type="submit" disabled={sending || !input.trim()} style={{
+                  width: '36px', height: '36px', borderRadius: '12px',
+                  background: input.trim() ? 'var(--primary-500)' : 'var(--bg-card)',
+                  color: input.trim() ? '#fff' : 'var(--text-3)',
+                  border: '1px solid var(--border)', cursor: input.trim() ? 'pointer' : 'default',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s',
+                  boxShadow: input.trim() ? '0 4px 12px rgba(124,58,237,0.3)' : 'none'
+                }}>
+                  <Send size={16} />
+                </button>
+              </div>
+            </form>
+            <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '11px', color: 'var(--text-ghost)' }}>
+              AI Tahlilchi xatolikka yo'l qo'yishi mumkin. Muhim ma'lumotlarni tekshiring.
+            </div>
+          </div>
         </div>
+
       </main>
 
       <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-
-        .ai-bubble {
-          background: var(--bg-elevated);
-          border: 1px solid var(--row-border);
-          border-left: 3px solid var(--primary-500);
-          border-radius: 4px 14px 14px 14px;
-          padding: 16px 20px;
-          color: var(--text);
-          font-size: 14px;
-          line-height: 1.75;
-          width: 100%;
+        
+        .claude-prose h1, .claude-prose h2, .claude-prose h3 {
+          color: var(--text); margin: 1.5em 0 0.8em; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase;
         }
-        .user-bubble {
-          background: rgba(124,58,237,0.12);
-          border: 1px solid rgba(124,58,237,0.25);
-          border-radius: 14px 14px 4px 14px;
-          padding: 13px 18px;
-          color: var(--text);
-          font-size: 14px;
-          line-height: 1.6;
+        .claude-prose h1 { 
+          font-size: 1.3em; 
+          border-bottom: 2px solid var(--primary); 
+          display: inline-block; padding-bottom: 4px;
         }
-        .ai-bubble p { margin: 0 0 10px 0; }
-        .ai-bubble p:last-child { margin-bottom: 0; }
-        .ai-bubble h1, .ai-bubble h2, .ai-bubble h3 { color: var(--text); margin: 16px 0 8px 0; font-weight: 800; }
-        .ai-bubble h1 { font-size: 17px; }
-        .ai-bubble h2 { font-size: 15px; }
-        .ai-bubble h3 { font-size: 13px; color: var(--primary-400); }
-        .ai-bubble ul, .ai-bubble ol { margin: 8px 0; padding-left: 20px; }
-        .ai-bubble li { margin: 4px 0; color: var(--text-2); }
-        .ai-bubble strong { color: var(--text); font-weight: 700; }
-        .ai-bubble em { color: var(--text-2); }
-        .ai-bubble blockquote { border-left: 3px solid var(--primary-400); margin: 10px 0; padding: 8px 16px; background: rgba(124,58,237,0.06); border-radius: 0 8px 8px 0; color: var(--text-2); }
-        .ai-bubble table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
-        .ai-bubble th { background: rgba(124,58,237,0.15); padding: 8px 12px; text-align: left; font-weight: 700; border: 1px solid var(--border); color: var(--text); }
-        .ai-bubble td { padding: 7px 12px; border: 1px solid var(--row-border); color: var(--text-2); }
-        .ai-bubble tr:nth-child(even) td { background: var(--row-hover); }
-        .inline-code { background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.2); padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: monospace; color: var(--primary-300); }
-        .ai-bubble pre { background: var(--bg-deep); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin: 10px 0; overflow-x: auto; }
-        .ai-bubble pre code { background: none; border: none; padding: 0; color: var(--text-2); font-size: 13px; }
-
-        .typing-dots { display: flex; gap: 5px; align-items: center; height: 20px; }
-        .typing-dots span { width: 7px; height: 7px; border-radius: 50%; background: var(--primary-400); animation: typingBounce 1.2s infinite; }
-        .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
-        .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
-        @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-6px); opacity: 1; } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .claude-prose h2 { font-size: 1.15em; }
+        .claude-prose h3 { font-size: 1.05em; }
+        .claude-prose p { margin: 0 0 1.25em; color: var(--text-2); line-height: 1.7; font-size: 1.05em; }
+        .claude-prose p:last-child { margin-bottom: 0; }
+        .claude-prose ul, .claude-prose ol { margin: 0 0 1.25em 0; padding-left: 20px; color: var(--text-2); line-height: 1.7; font-size: 1.05em; }
+        .claude-prose li { margin-bottom: 0.6em; }
+        .claude-prose strong { color: var(--text); font-weight: 800; background: var(--bg-elevated); padding: 2px 6px; border-radius: 6px; border: 1px solid var(--border); }
+        .claude-prose em { color: var(--text-2); font-style: italic; }
+        .claude-prose blockquote {
+          border-left: 4px solid var(--primary); margin: 1.5em 0; padding: 1em;
+          color: var(--text-3); font-style: italic; background: var(--bg-elevated); border-radius: 0 12px 12px 0;
+        }
+        .claude-prose table {
+          width: 100%; border-collapse: separate; border-spacing: 0; margin: 2em 0; font-size: 0.95em;
+          border-radius: 12px; overflow: hidden; border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+        }
+        .claude-prose th, .claude-prose td {
+          padding: 14px 18px; text-align: left; border-bottom: 1px solid var(--row-border);
+        }
+        .claude-prose th { background: var(--bg-elevated); font-weight: 800; color: var(--text); text-transform: uppercase; font-size: 0.85em; letter-spacing: 1px; border-bottom: 2px solid var(--border); }
+        .claude-prose tr:last-child td { border-bottom: none; }
+        .claude-prose tr:hover td { background: var(--row-hover); }
+        .claude-prose .inline-code {
+          background: var(--bg-elevated); border: 1px solid var(--border);
+          padding: 2px 6px; border-radius: 6px; font-size: 0.85em; font-family: 'JetBrains Mono', monospace; color: var(--primary);
+        }
+        .claude-prose pre {
+          background: var(--bg-deep); border: 1px solid var(--border);
+          border-radius: 12px; padding: 16px; margin: 1.5em 0; overflow-x: auto; box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .claude-prose pre code {
+          background: none; border: none; padding: 0; color: var(--text); font-size: 0.9em; font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .typing-pulse {
+          width: 8px; height: 8px; border-radius: 50%;
+          background: var(--primary-400); margin-left: 4px;
+          animation: pulse 1s infinite alternate;
+        }
+        @keyframes pulse {
+          0% { transform: scale(0.8); opacity: 0.5; }
+          100% { transform: scale(1.4); opacity: 1; box-shadow: 0 0 8px var(--primary-500); }
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .btn-hover:hover { background: rgba(124,58,237,0.08) !important; border-color: rgba(124,58,237,0.3) !important; color: var(--primary-400) !important; }
       `}</style>
     </div>
   );

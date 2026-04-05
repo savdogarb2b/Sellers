@@ -161,6 +161,7 @@ export default function Sidebar() {
   const navRef    = useRef(null);
   const [expandedGroups, setExpandedGroups] = useState({});
   const [mounted,  setMounted]  = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   useEffect(() => {
     const role   = session?.user?.role;
@@ -168,7 +169,9 @@ export default function Sidebar() {
                  : role === 'ADMIN'      ? adminGroups
                  : employeeGroups;
     const init = {};
-    groups.forEach(g => { init[g.key] = g.items.some(i => i.href === pathname); });
+    if (groups) {
+      groups.forEach(g => { init[g.key] = g.items.some(i => i.href === pathname); });
+    }
     setExpandedGroups(init);
     setMounted(true);
     setTimeout(() => {
@@ -177,10 +180,21 @@ export default function Sidebar() {
         if (s && navRef.current) navRef.current.scrollTop = +s;
       } catch {}
     }, 10);
+
+    // Mobile sidebar events
+    const handleToggle = () => setIsMobileOpen(p => !p);
+    const handleClose = () => setIsMobileOpen(false);
+    window.addEventListener('toggle-sidebar', handleToggle);
+    window.addEventListener('close-sidebar', handleClose);
+    return () => {
+      window.removeEventListener('toggle-sidebar', handleToggle);
+      window.removeEventListener('close-sidebar', handleClose);
+    };
   }, [pathname, session]);
 
   const handleScroll = e => sessionStorage.setItem('sidebarScroll', e.target.scrollTop);
   const toggle = key => setExpandedGroups(p => ({ ...p, [key]: !p[key] }));
+  const closeMobile = () => { if (window.innerWidth <= 768) setIsMobileOpen(false); };
 
   if (!session) return null;
 
@@ -194,7 +208,15 @@ export default function Sidebar() {
     .split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   return (
-    <aside className="sidebar">
+    <>
+      {isMobileOpen && (
+        <div 
+          onClick={() => setIsMobileOpen(false)}
+          className="sidebar-overlay"
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1040, backdropFilter: 'blur(3px)' }}
+        />
+      )}
+      <aside className={`sidebar ${isMobileOpen ? 'open' : ''}`}>
 
       {/* ── BRAND ── */}
       <div style={{
@@ -307,6 +329,7 @@ export default function Sidebar() {
                     <Link
                       key={item.href}
                       href={item.href}
+                      onClick={closeMobile}
                       style={{
                         display: 'flex', alignItems: 'center', gap: '8px',
                         padding: '5px 8px 5px 10px',
@@ -387,9 +410,11 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* Logout */}
         <button
-          onClick={() => signOut({ callbackUrl: '/login' })}
+          onClick={async () => {
+            await signOut({ redirect: false });
+            window.location.href = '/login';
+          }}
           style={{
             width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
             padding: '7px 12px', borderRadius: '7px', cursor: 'pointer',
@@ -416,5 +441,6 @@ export default function Sidebar() {
       </div>
 
     </aside>
+    </>
   );
 }

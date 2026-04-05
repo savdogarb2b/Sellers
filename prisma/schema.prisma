@@ -60,6 +60,7 @@ model User {
   attendances    Attendance[]
   dailyReports   DailyReport[]
   chatMessages   ChatMessage[]
+  chatSessions   ChatSession[]
   assignedPenalties PenaltyRecord[] @relation("AssignedPenalties")
   assignedBonuses   BonusRecord[]   @relation("AssignedBonuses")
   employeeMonthlyPlans EmployeeMonthlyPlan[]
@@ -204,14 +205,27 @@ model DailyReportLeadStatus {
   stage  FunnelStage @relation(fields: [stageId], references: [id])
 }
 
+model ChatSession {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @default("Yangi Suhbat")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+}
+
 model ChatMessage {
   id        String   @id @default(cuid())
   userId    String
+  sessionId String?
   role      String   // "user" or "assistant"
   content   String
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session ChatSession? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
 model EmployeeMonthlyPlan {

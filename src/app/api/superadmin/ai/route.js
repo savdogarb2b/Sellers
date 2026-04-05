@@ -11,10 +11,14 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const messages = await prisma.chatMessage.findMany({
-    where: { userId: session.user.id },
+    where: { 
+      userId: session.user.id,
+      createdAt: { gte: weekAgo }
+    },
     orderBy: { createdAt: 'asc' },
-    take: 50,
+    take: 100,
   });
 
   return NextResponse.json(messages);
@@ -28,7 +32,14 @@ export async function POST(request) {
   const userExists = await prisma.user.findUnique({ where: { id: userId } });
   if (!userExists) return NextResponse.json({ error: 'Foydalanuvchi topilmadi. Logout qilib qayta kiring.' }, { status: 401 });
 
-  const { message, organizationId, test } = await request.json();
+  const { message, organizationId, test, sessionId } = await request.json();
+
+  if (sessionId) {
+    const sessionExists = await prisma.chatSession.findUnique({ where: { id: sessionId } });
+    if (sessionExists && sessionExists.title === 'Yangi Suhbat') {
+      try { await prisma.chatSession.update({ where: { id: sessionId }, data: { title: message.slice(0, 30) + '...' } }); } catch(e) {}
+    }
+  }
 
   const apiKeySetting = await prisma.systemSettings.findUnique({ where: { key: 'DEEPSEEK_API_KEY' } });
   const apiKey = apiKeySetting?.value;
@@ -109,13 +120,21 @@ export async function POST(request) {
             }
           }
         }
-
-        if (fullText) {
-          await prisma.chatMessage.create({ data: { userId, role: 'assistant', content: fullText } });
-        }
         controller.close();
       } catch (err) {
         controller.error(err);
+      } finally {
+        if (fullText) {
+          try { 
+            if (sessionId) {
+              await prisma.chatMessage.create({ data: { userId, role: 'user', content: message, sessionId } });
+              await prisma.chatMessage.create({ data: { userId, role: 'assistant', content: fullText, sessionId } }); 
+            } else {
+              await prisma.chatMessage.create({ data: { userId, role: 'user', content: message } });
+              await prisma.chatMessage.create({ data: { userId, role: 'assistant', content: fullText } }); 
+            }
+          } catch(e) {}
+        }
       }
     }
   });

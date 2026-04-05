@@ -157,7 +157,7 @@ const orgJsonLd = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="uz">
+    <html lang="uz" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
@@ -180,7 +180,7 @@ export default function RootLayout({ children }) {
           }}
         />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <Providers>
           {children}
         </Providers>

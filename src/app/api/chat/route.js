@@ -8,10 +8,14 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const userId = session.user.id;
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const messages = await prisma.chatMessage.findMany({
-    where: { userId },
+    where: { 
+      userId,
+      createdAt: { gte: weekAgo }
+    },
     orderBy: { createdAt: 'asc' },
-    take: 50,
+    take: 100,
   });
 
   return NextResponse.json(messages);
@@ -27,7 +31,14 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Foydalanuvchi topilmadi. Iltimos, tizimdan chiqib qayta kiring (Logout/Login).' }, { status: 401 });
   }
 
-  const { message } = await request.json();
+  const { message, sessionId } = await request.json();
+
+  if (sessionId) {
+    const sessionExists = await prisma.chatSession.findUnique({ where: { id: sessionId } });
+    if (sessionExists && sessionExists.title === 'Yangi Suhbat') {
+      try { await prisma.chatSession.update({ where: { id: sessionId }, data: { title: message.slice(0, 30) + '...' } }); } catch(e) {}
+    }
+  }
 
   const setting = await prisma.systemSettings.findUnique({ where: { key: 'DEEPSEEK_API_KEY' } });
   const apiKey = setting?.value;
@@ -35,9 +46,7 @@ export async function POST(request) {
     return NextResponse.json({ error: 'DeepSeek API kaliti kiritilmagan. Superadmin sozlamalaridan kiriting.' }, { status: 500 });
   }
 
-  await prisma.chatMessage.create({
-    data: { userId, role: 'user', content: message },
-  });
+
 
   const systemPrompt = "Sen SalesCRM yordamchisiz. O'zbek tilida, markdown formatida javob ber.";
   const encoder = new TextEncoder();
@@ -74,15 +83,23 @@ export async function POST(request) {
             }
           }
         }
-
-        if (fullText) {
-          await prisma.chatMessage.create({ data: { userId, role: 'assistant', content: fullText } });
-        }
         controller.close();
       } catch (error) {
         console.error('Streaming error:', error);
-        controller.enqueue(encoder.encode('Xatolik yuz berdi. Iltimos qayta urinib ko\'ring.'));
+        controller.enqueue(encoder.encode('\n\n[Ma\'lumot uzib qo\'yildi]'));
         controller.close();
+      } finally {
+        if (fullText) {
+          try { 
+            if (sessionId) {
+              await prisma.chatMessage.create({ data: { userId, role: 'user', content: message, sessionId } });
+              await prisma.chatMessage.create({ data: { userId, role: 'assistant', content: fullText, sessionId } }); 
+            } else {
+              await prisma.chatMessage.create({ data: { userId, role: 'user', content: message } });
+              await prisma.chatMessage.create({ data: { userId, role: 'assistant', content: fullText } }); 
+            }
+          } catch(err) {}
+        }
       }
     }
   });

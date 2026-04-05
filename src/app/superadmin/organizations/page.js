@@ -432,7 +432,7 @@ export default function OrganizationsPage() {
 function ModalOverlay({ children, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose} style={{ backdropFilter: 'blur(14px)', background: 'var(--bg-deep)' }}>
-      <div className="card glass-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', width: '100%', border: '1px solid var(--border)', animation: 'modalIn 0.3s ease forwards', margin: '5vh auto' }}>
+      <div className="card glass-panel custom-scrollbar" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', width: '100%', border: '1px solid var(--border)', animation: 'modalIn 0.3s ease forwards', margin: '5vh auto', maxHeight: '90vh', overflowY: 'auto' }}>
         {children}
       </div>
     </div>
