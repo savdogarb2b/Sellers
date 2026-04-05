@@ -22,8 +22,11 @@ export async function GET() {
   // ====== ADMIN STATS — 23+ METRICS ======
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrowStart = new Date(todayStart);
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   
   // 7 kun oldin
   const weekAgo = new Date(todayStart);
@@ -44,35 +47,52 @@ export async function GET() {
   });
 
   const totalEmployees = employees.length;
+  const allReports = employees.flatMap(e => e.dailyReports);
+  const sumLeads = (reports) => reports.reduce((sum, report) => sum + (report.leadStatuses ? report.leadStatuses.reduce((acc, status) => acc + (status.count || 0), 0) : 0), 0);
+  const sumSales = (reports) => reports.reduce((sum, report) => sum + (report.sales || 0), 0);
+  const sumRevenue = (reports) => reports.reduce((sum, report) => sum + (report.revenue || 0), 0);
+  const toPercent = (sales, leads) => leads > 0 ? Math.round((sales / leads) * 1000) / 10 : 0;
 
   // ---- SOTUV ----
-  const totalSales = employees.reduce((sum, e) => sum + e.dailyReports.reduce((s, r) => s + r.sales, 0), 0);
+  const totalSales = sumSales(allReports);
   const totalCalls = employees.reduce((sum, e) => sum + e.dailyReports.reduce((s, r) => s + r.totalCalls, 0), 0);
-  const totalQualityLeads = employees.reduce((sum, e) => sum + e.dailyReports.reduce((s, r) => s + (r.leadStatuses ? r.leadStatuses.reduce((acc, ls) => acc + ls.count, 0) : 0), 0), 0);
+  const totalQualityLeads = sumLeads(allReports);
   const totalLeads = totalQualityLeads;
-  const avgConversion = totalQualityLeads > 0 ? Math.round((totalSales / totalQualityLeads) * 100) : 0;
+  const avgConversion = toPercent(totalSales, totalQualityLeads);
 
-  const totalRevenue = employees.reduce((sum, e) => sum + e.dailyReports.reduce((s, r) => s + r.revenue, 0), 0);
+  const totalRevenue = sumRevenue(allReports);
   const avgCheck = totalSales > 0 ? Math.round(totalRevenue / totalSales) : 0;
 
-  // Bugungi sifatli lidlar (Jami lidlar sifatida)
-  const todayQualityLeads = employees.reduce((sum, e) => 
-    sum + e.dailyReports.filter(r => new Date(r.date).toDateString() === todayStart.toDateString()).reduce((s, r) => s + (r.leadStatuses ? r.leadStatuses.reduce((acc, ls) => acc + ls.count, 0) : 0), 0), 0);
+  const todayReports = allReports.filter(report => {
+    const reportDate = new Date(report.date);
+    return reportDate >= todayStart && reportDate < tomorrowStart;
+  });
+  const weeklyReports = allReports.filter(report => new Date(report.date) >= weekAgo);
+  const monthlyReports = allReports.filter(report => {
+    const reportDate = new Date(report.date);
+    return reportDate.getMonth() + 1 === currentMonth && reportDate.getFullYear() === currentYear;
+  });
+
+  const todayQualityLeads = sumLeads(todayReports);
+  const todaySales = sumSales(todayReports);
+  const todayRevenue = sumRevenue(todayReports);
+  const thisWeekSales = sumSales(weeklyReports);
+  const weeklyRevenue = sumRevenue(weeklyReports);
+  const weeklyLeads = sumLeads(weeklyReports);
+  const monthlySales = sumSales(monthlyReports);
+  const monthlyRevenue = sumRevenue(monthlyReports);
+  const monthlyLeads = sumLeads(monthlyReports);
+  const todayConversion = toPercent(todaySales, todayQualityLeads);
+  const weeklyConversion = toPercent(thisWeekSales, weeklyLeads);
+  const monthlyConversion = toPercent(monthlySales, monthlyLeads);
 
   // Xodim boshiga o'rtacha sotuv
   const salesPerEmployee = totalEmployees > 0 ? Math.round(totalSales / totalEmployees) : 0;
 
   // Haftalik trend: bu haftadagi vs o'tgan haftadagi sotuvlar
-  const thisWeekSales = employees.reduce((sum, e) => 
-    sum + e.dailyReports.filter(r => new Date(r.date) >= weekAgo).reduce((s, r) => s + r.sales, 0), 0);
   const lastWeekSales = employees.reduce((sum, e) => 
     sum + e.dailyReports.filter(r => { const d = new Date(r.date); return d >= twoWeeksAgo && d < weekAgo; }).reduce((s, r) => s + r.sales, 0), 0);
   const weeklyTrendPercent = lastWeekSales > 0 ? Math.round((thisWeekSales - lastWeekSales) / lastWeekSales * 100) : (thisWeekSales > 0 ? 100 : 0);
-
-  // Haftalik konversiya
-  const thisWeekQualityLeads = employees.reduce((sum, e) =>
-    sum + e.dailyReports.filter(r => new Date(r.date) >= weekAgo).reduce((s, r) => s + (r.leadStatuses ? r.leadStatuses.reduce((acc, ls) => acc + ls.count, 0) : 0), 0), 0);
-  const weeklyConversion = thisWeekQualityLeads > 0 ? Math.round(thisWeekSales / thisWeekQualityLeads * 1000) / 10 : 0;
 
   // ---- MOLIYA ----
   const totalPenalties = employees.reduce((sum, e) => sum + e.penaltyRecords.reduce((s, r) => s + r.amount, 0), 0);
@@ -128,6 +148,35 @@ export async function GET() {
     e.dailyReports.some(r => new Date(r.date).toDateString() === todayStart.toDateString())
   ).length;
 
+  const employeeConversions = employees.map(employee => {
+    const employeeMonthReports = employee.dailyReports.filter(report => {
+      const reportDate = new Date(report.date);
+      return reportDate.getMonth() + 1 === currentMonth && reportDate.getFullYear() === currentYear;
+    });
+    const employeeLeads = sumLeads(employeeMonthReports);
+    const employeeSales = sumSales(employeeMonthReports);
+    const employeeRevenue = sumRevenue(employeeMonthReports);
+    const todayAttendanceRecord = employee.attendances.find(attendance => {
+      const attendanceDate = new Date(attendance.date);
+      return attendanceDate >= todayStart && attendanceDate < tomorrowStart;
+    });
+
+    return {
+      id: employee.id,
+      name: employee.name,
+      leads: employeeLeads,
+      sales: employeeSales,
+      revenue: employeeRevenue,
+      conversion: toPercent(employeeSales, employeeLeads),
+      checkedIn: Boolean(todayAttendanceRecord),
+      isLate: Boolean(todayAttendanceRecord?.isLate),
+    };
+  }).sort((a, b) => {
+    if (b.conversion !== a.conversion) return b.conversion - a.conversion;
+    if (b.sales !== a.sales) return b.sales - a.sales;
+    return b.leads - a.leads;
+  });
+
   // ---- STRATEGY ----
   const strategy = await prisma.salesStrategy.findFirst({
     where: { organizationId: orgId },
@@ -157,6 +206,44 @@ export async function GET() {
     count: stage.reportLeadStatuses.reduce((s, rls) => s + rls.count, 0),
   }));
 
+  const funnelStageAnalytics = funnelStages.map((stage, index) => {
+    const count = stage.reportLeadStatuses.reduce((sum, item) => {
+      const reportDate = new Date(item.report.date);
+      if (reportDate.getMonth() + 1 !== currentMonth || reportDate.getFullYear() !== currentYear) return sum;
+      return sum + item.count;
+    }, 0);
+
+    if (index === 0) {
+      return {
+        name: stage.name,
+        count,
+        conversionFromPrev: 100,
+        dropOffPercent: 0,
+      };
+    }
+
+    const previousCount = funnelStages[index - 1].reportLeadStatuses.reduce((sum, item) => {
+      const reportDate = new Date(item.report.date);
+      if (reportDate.getMonth() + 1 !== currentMonth || reportDate.getFullYear() !== currentYear) return sum;
+      return sum + item.count;
+    }, 0);
+
+    const conversionFromPrev = previousCount > 0 ? Math.min(100, Math.round((count / previousCount) * 1000) / 10) : 0;
+    const dropOffPercent = previousCount > 0 ? Math.round((Math.max(previousCount - count, 0) / previousCount) * 1000) / 10 : 0;
+
+    return {
+      name: stage.name,
+      count,
+      conversionFromPrev,
+      dropOffPercent,
+    };
+  });
+
+  const weakestStage = funnelStageAnalytics.slice(1).reduce((lowest, stage) => {
+    if (!lowest) return stage;
+    return stage.conversionFromPrev < lowest.conversionFromPrev ? stage : lowest;
+  }, null);
+
   // ---- TOP PERFORMER ----
   const empSales = employees.map(e => ({
     name: e.name,
@@ -180,10 +267,19 @@ export async function GET() {
     totalRevenue,
     avgCheck,
     todayQualityLeads,
+    todaySales,
+    todayRevenue,
     salesPerEmployee,
     thisWeekSales,
     weeklyTrendPercent,
     weeklyConversion,
+    todayConversion,
+    monthlyConversion,
+    monthlyLeads,
+    monthlySales,
+    monthlyRevenue,
+    weeklyLeads,
+    todayLeads: todayQualityLeads,
 
     // Moliya
     totalSalaryFund,
@@ -212,5 +308,15 @@ export async function GET() {
 
     // Voronka
     funnelDistribution,
+    funnelStageAnalytics,
+    weakestStage,
+
+    // Conversion dashboard
+    employeeConversions,
+    conversionSummary: {
+      today: { conversion: todayConversion, leads: todayQualityLeads, sales: todaySales, revenue: todayRevenue },
+      weekly: { conversion: weeklyConversion, leads: weeklyLeads, sales: thisWeekSales, revenue: weeklyRevenue },
+      monthly: { conversion: monthlyConversion, leads: monthlyLeads, sales: monthlySales, revenue: monthlyRevenue },
+    },
   });
 }

@@ -29,15 +29,33 @@ export async function POST(request) {
   let isLate = false;
   let lateMinutes = 0;
   let penaltyApplied = 0;
+  let lateCountTotal = 0;
+  let warningIssued = false;
+  let warningMessage = '';
+
+  const previousLateCount = await prisma.attendance.count({
+    where: { userId, isLate: true },
+  });
 
   if (user.workStartTime) {
     const [h, m] = user.workStartTime.split(':').map(Number);
     const startTime = new Date(now);
     startTime.setHours(h, m, 0, 0);
+    const thresholdMinutes = Math.max(0, user.latenessThreshold || 0);
+    const penaltyTime = new Date(startTime.getTime() + thresholdMinutes * 60000);
 
     if (now > startTime) {
       isLate = true;
       lateMinutes = Math.ceil((now - startTime) / 60000);
+      lateCountTotal = previousLateCount + 1;
+      warningIssued = lateCountTotal <= 2;
+
+      if (warningIssued) {
+        warningMessage = `${lateCountTotal}-kechikish. Hozircha ogohlantirish berildi. 3-kechikishdan boshlab jarima yoziladi.`;
+      }
+    }
+
+    if (lateCountTotal >= 3 && now > penaltyTime) {
       penaltyApplied = user.latenessPenalty || 0;
     }
   }
@@ -65,7 +83,12 @@ export async function POST(request) {
     });
   }
 
-  return NextResponse.json(attendance);
+  return NextResponse.json({
+    ...attendance,
+    lateCountTotal,
+    warningIssued,
+    warningMessage,
+  });
 }
 
 export async function GET(request) {

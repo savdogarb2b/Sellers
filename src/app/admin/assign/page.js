@@ -44,6 +44,14 @@ export default function AssignPage() {
     setPenaltyRecords(pr); setBonusRecords(br);
   };
 
+  const handleDeleteRecord = async (id) => {
+    const url = tab === 'penalty' ? `/api/penalty-records?id=${id}` : `/api/bonus-records?id=${id}`;
+    if (!confirm(tab === 'penalty' ? 'Jarimani bekor qilmoqchimisiz?' : 'Bonusni bekor qilmoqchimisiz?')) return;
+    await fetch(url, { method: 'DELETE' });
+    const [pr, br] = await Promise.all([fetch('/api/penalty-records').then(r => r.json()), fetch('/api/bonus-records').then(r => r.json())]);
+    setPenaltyRecords(pr); setBonusRecords(br);
+  };
+
   const records = tab === 'penalty' ? penaltyRecords : bonusRecords;
 
   if (loading) return <div className="app-layout"><Sidebar /><Navbar /><main className="main-content"><div className="loading-container"><div className="loading-spinner" /></div></main></div>;
@@ -114,11 +122,14 @@ export default function AssignPage() {
                         <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>{r.reason}</div>
                         <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{new Date(r.date).toLocaleDateString('uz')}</div>
                       </div>
-                      <div style={{ textAlign: 'right' }}>
+                      <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                         <span style={{ fontWeight: 900, fontSize: '16px', color: tab === 'penalty' ? 'var(--danger-500)' : 'var(--accent-teal)' }}>
                           {tab === 'penalty' ? '-' : '+'}{r.amount.toLocaleString()}
                         </span>
                         <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>so'm</div>
+                        <button className="btn btn-secondary btn-sm" style={{ padding: '6px 10px', fontSize: '10px' }} onClick={() => handleDeleteRecord(r.id)}>
+                          Bekor qilish
+                        </button>
                       </div>
                     </div>
                   ))}

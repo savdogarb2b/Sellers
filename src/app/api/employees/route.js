@@ -9,7 +9,11 @@ export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const where = session.user.role === 'ADMIN' ? { organizationId: session.user.organizationId } : {};
+  const where = session.user.role === 'ADMIN'
+    ? { organizationId: session.user.organizationId }
+    : session.user.role === 'EMPLOYEE'
+      ? { id: session.user.id }
+      : {};
 
   const employees = await prisma.user.findMany({
     where: { ...where, role: 'EMPLOYEE' },
@@ -23,7 +27,40 @@ export async function GET() {
     orderBy: { name: 'asc' },
   });
 
-  return NextResponse.json(employees);
+  const lateCounts = employees.length > 0
+    ? await prisma.attendance.groupBy({
+        by: ['userId'],
+        where: {
+          userId: { in: employees.map(employee => employee.id) },
+          isLate: true,
+        },
+        _count: { _all: true },
+      })
+    : [];
+
+  const lateCountMap = Object.fromEntries(lateCounts.map(item => [item.userId, item._count._all]));
+
+  const enrichedEmployees = employees.map(employee => {
+    const lateAttendanceCount = lateCountMap[employee.id] || 0;
+    const latenessState = lateAttendanceCount === 0
+      ? 'NORMAL'
+      : lateAttendanceCount < 3
+        ? 'WARNING'
+        : 'PENALTY';
+
+    return {
+      ...employee,
+      lateAttendanceCount,
+      latenessState,
+      latenessMessage: lateAttendanceCount === 0
+        ? 'Kechikish qayd etilmagan'
+        : lateAttendanceCount < 3
+          ? `${lateAttendanceCount}-kechikish. Hozircha ogohlantirish.`
+          : `${lateAttendanceCount}-kechikish. Jarima qo'llanadi.`,
+    };
+  });
+
+  return NextResponse.json(enrichedEmployees);
 }
 
 export async function POST(request) {
@@ -33,7 +70,7 @@ export async function POST(request) {
   }
 
   const body = await request.json();
-  const { name, fixedSalary, workStartTime, workEndTime, latenessPenalty, latenessThreshold, locationLat, locationLng, locationRadius, kpis } = body;
+  const { name, fixedSalary, workStartTime, workEndTime, latenessPenalty, latenessThreshold, reportSubmissionThreshold, locationLat, locationLng, locationRadius, kpis } = body;
 
   if (!name) return NextResponse.json({ error: 'Xodim ismi kerak' }, { status: 400 });
 
@@ -48,6 +85,13 @@ export async function POST(request) {
 
   const now = new Date();
 
+  const parsedLatenessThreshold = latenessThreshold === undefined || latenessThreshold === null || latenessThreshold === ''
+    ? 15
+    : parseInt(latenessThreshold);
+  const parsedReportSubmissionThreshold = reportSubmissionThreshold === undefined || reportSubmissionThreshold === null || reportSubmissionThreshold === ''
+    ? 15
+    : parseInt(reportSubmissionThreshold);
+
   const user = await prisma.user.create({
     data: {
       name,
@@ -59,7 +103,8 @@ export async function POST(request) {
       workStartTime: workStartTime || '09:00',
       workEndTime: workEndTime || '18:00',
       latenessPenalty: parseFloat(latenessPenalty) || 0,
-      latenessThreshold: parseInt(latenessThreshold) || 15,
+      latenessThreshold: Number.isNaN(parsedLatenessThreshold) ? 15 : parsedLatenessThreshold,
+      reportSubmissionThreshold: Number.isNaN(parsedReportSubmissionThreshold) ? 15 : parsedReportSubmissionThreshold,
       locationLat: locationLat ? parseFloat(locationLat) : null,
       locationLng: locationLng ? parseFloat(locationLng) : null,
       locationRadius: locationRadius ? parseFloat(locationRadius) : null,
@@ -98,11 +143,14 @@ export async function PUT(request) {
     ...raw,
     fixedSalary: raw.fixedSalary !== undefined ? parseFloat(raw.fixedSalary) || 0 : undefined,
     latenessPenalty: raw.latenessPenalty !== undefined ? parseFloat(raw.latenessPenalty) || 0 : undefined,
-    latenessThreshold: raw.latenessThreshold !== undefined ? parseInt(raw.latenessThreshold) || 15 : undefined,
+    latenessThreshold: raw.latenessThreshold !== undefined ? (raw.latenessThreshold === '' ? 15 : parseInt(raw.latenessThreshold)) : undefined,
+    reportSubmissionThreshold: raw.reportSubmissionThreshold !== undefined ? (raw.reportSubmissionThreshold === '' ? 15 : parseInt(raw.reportSubmissionThreshold)) : undefined,
     locationLat: raw.locationLat !== undefined ? (raw.locationLat ? parseFloat(raw.locationLat) : null) : undefined,
     locationLng: raw.locationLng !== undefined ? (raw.locationLng ? parseFloat(raw.locationLng) : null) : undefined,
     locationRadius: raw.locationRadius !== undefined ? (raw.locationRadius ? parseFloat(raw.locationRadius) : null) : undefined,
   };
+  if (Number.isNaN(data.latenessThreshold)) data.latenessThreshold = 15;
+  if (Number.isNaN(data.reportSubmissionThreshold)) data.reportSubmissionThreshold = 15;
   // Remove undefined keys
   Object.keys(data).forEach(k => data[k] === undefined && delete data[k]);
 

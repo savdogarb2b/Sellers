@@ -35,8 +35,23 @@ export async function POST(request) {
 
   const { incomingCalls, outgoingCalls, qualityLeads, nonQualityLeads, officeVisits, sales, revenue, leadStatuses } = await request.json();
   const userId = session.user.id;
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const existingReport = await prisma.dailyReport.findFirst({
+    where: { userId, date: { gte: today, lt: tomorrow } },
+  });
+
+  if (existingReport) {
+    return NextResponse.json({ error: 'Bugungi hisobot allaqachon yuborilgan' }, { status: 400 });
+  }
+
+  const now = new Date();
 
   const report = await prisma.dailyReport.create({
     data: {
@@ -59,6 +74,26 @@ export async function POST(request) {
     },
     include: { leadStatuses: { include: { stage: true } } },
   });
+
+  if (user.workEndTime) {
+    const [h, m] = user.workEndTime.split(':').map(Number);
+    const reportDeadline = new Date(now);
+    reportDeadline.setHours(h, m, 0, 0);
+
+    const thresholdMinutes = Math.max(0, user.reportSubmissionThreshold || 0);
+    const penaltyTime = new Date(reportDeadline.getTime() + thresholdMinutes * 60000);
+
+    if (now > penaltyTime && (user.latenessPenalty || 0) > 0) {
+      await prisma.penaltyRecord.create({
+        data: {
+          userId,
+          reason: `Hisobot ${Math.ceil((now - reportDeadline) / 60000)} daqiqa kech topshirildi`,
+          amount: user.latenessPenalty || 0,
+          assignedById: userId,
+        },
+      });
+    }
+  }
 
   return NextResponse.json(report);
 }

@@ -35,6 +35,13 @@ export async function PUT(request) {
   if (!session || session.user.role !== 'ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id, name } = await request.json();
+  const existingStage = await prisma.funnelStage.findFirst({
+    where: { id, organizationId: session.user.organizationId },
+    select: { id: true },
+  });
+
+  if (!existingStage) return NextResponse.json({ error: 'Stage topilmadi' }, { status: 404 });
+
   const stage = await prisma.funnelStage.update({
     where: { id },
     data: { name },
@@ -47,6 +54,35 @@ export async function DELETE(request) {
   if (!session || session.user.role !== 'ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
-  await prisma.funnelStage.delete({ where: { id: searchParams.get('id') } });
+  const id = searchParams.get('id');
+  if (!id) return NextResponse.json({ error: 'ID kerak' }, { status: 400 });
+
+  const stage = await prisma.funnelStage.findFirst({
+    where: { id, organizationId: session.user.organizationId },
+    select: { id: true, order: true },
+  });
+
+  if (!stage) return NextResponse.json({ error: 'Bosqich topilmadi' }, { status: 404 });
+
+  await prisma.$transaction(async (tx) => {
+    await tx.dailyReportLeadStatus.deleteMany({ where: { stageId: id } });
+    await tx.funnelStage.delete({ where: { id } });
+
+    const remainingStages = await tx.funnelStage.findMany({
+      where: { organizationId: session.user.organizationId },
+      orderBy: { order: 'asc' },
+      select: { id: true },
+    });
+
+    await Promise.all(
+      remainingStages.map((item, index) =>
+        tx.funnelStage.update({
+          where: { id: item.id },
+          data: { order: index + 1 },
+        })
+      )
+    );
+  });
+
   return NextResponse.json({ success: true });
 }

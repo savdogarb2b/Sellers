@@ -14,7 +14,7 @@ export default function OrganizationsPage() {
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [createForm, setCreateForm] = useState({ orgName: '', orgAddress: '', orgPhone: '', adminName: '', description: '', maxEmployees: 50, subscriptionPlan: 'BASIC' });
+  const [createForm, setCreateForm] = useState({ orgName: '', orgAddress: '', orgPhone: '', adminName: '', description: '', maxEmployees: '50', subscriptionPlan: 'BASIC' });
   const [editForm, setEditForm] = useState({});
   const [freezeReason, setFreezeReason] = useState('');
 
@@ -38,7 +38,7 @@ export default function OrganizationsPage() {
     const data = await res.json();
     setCreating(false);
     setShowCreateModal(false);
-    setCreateForm({ orgName: '', orgAddress: '', orgPhone: '', adminName: '', description: '', maxEmployees: 50, subscriptionPlan: 'BASIC' });
+    setCreateForm({ orgName: '', orgAddress: '', orgPhone: '', adminName: '', description: '', maxEmployees: '50', subscriptionPlan: 'BASIC' });
     if (data.generatedCredentials) {
       setShowCredentials({
         orgName: createForm.orgName,
@@ -108,7 +108,7 @@ export default function OrganizationsPage() {
       address: org.address || '',
       phone: org.phone || '',
       description: org.description || '',
-      maxEmployees: org.maxEmployees || 50,
+      maxEmployees: String(org.maxEmployees ?? 50),
       subscriptionPlan: org.subscriptionPlan || 'BASIC',
     });
     setShowEditModal(org.id);
@@ -281,7 +281,7 @@ export default function OrganizationsPage() {
                 <div className="form-row" style={{ marginTop: '12px' }}>
                   <div className="form-group">
                     <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Max Xodimlar</label>
-                    <input className="form-input" type="number" value={createForm.maxEmployees} onChange={e => setCreateForm({...createForm, maxEmployees: parseInt(e.target.value) || 50})} />
+                    <input className="form-input" type="number" value={createForm.maxEmployees} onChange={e => setCreateForm({...createForm, maxEmployees: e.target.value})} />
                   </div>
                   <div className="form-group">
                     <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Tarif</label>
@@ -340,7 +340,7 @@ export default function OrganizationsPage() {
                 <div className="form-row" style={{ marginTop: '12px' }}>
                   <div className="form-group">
                     <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Max Xodimlar</label>
-                    <input className="form-input" type="number" value={editForm.maxEmployees} onChange={e => setEditForm({...editForm, maxEmployees: parseInt(e.target.value) || 50})} />
+                    <input className="form-input" type="number" value={editForm.maxEmployees ?? ''} onChange={e => setEditForm({...editForm, maxEmployees: e.target.value})} />
                   </div>
                   <div className="form-group">
                     <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Tarif</label>

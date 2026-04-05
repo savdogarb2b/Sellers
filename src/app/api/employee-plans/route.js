@@ -34,7 +34,7 @@ export async function POST(request) {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== 'ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { userId, month, year, targetSales } = await request.json();
+  const { userId, month, year, targetSales, targetRevenue } = await request.json();
 
   if (!userId || !month || !year) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -49,13 +49,15 @@ export async function POST(request) {
       }
     },
     update: {
-      targetSales: parseInt(targetSales) || 0
+      targetSales: parseInt(targetSales) || 0,
+      targetRevenue: parseFloat(targetRevenue) || 0
     },
     create: {
       userId,
       month: parseInt(month),
       year: parseInt(year),
-      targetSales: parseInt(targetSales) || 0
+      targetSales: parseInt(targetSales) || 0,
+      targetRevenue: parseFloat(targetRevenue) || 0
     }
   });
 

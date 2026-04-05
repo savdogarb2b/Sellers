@@ -23,7 +23,7 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Unauthorized or no organization' }, { status: 401 });
   }
 
-  const { targetSales, targetConversion, startDate, endDate } = await request.json();
+  const { targetSales, targetRevenue, targetConversion, startDate, endDate } = await request.json();
   
   const start = new Date(startDate);
   const end = new Date(endDate);
@@ -37,6 +37,7 @@ export async function POST(request) {
   }
 
   const monthlySales = Math.ceil(targetSales / totalMonths);
+  const monthlyRevenue = totalMonths > 0 ? Number(((parseFloat(targetRevenue) || 0) / totalMonths).toFixed(2)) : 0;
   const monthlyLeads = Math.ceil(monthlySales / (targetConversion / 100));
   
   const d2 = new Date(start);
@@ -45,6 +46,7 @@ export async function POST(request) {
       month: d2.getMonth() + 1,
       year: d2.getFullYear(),
       targetSales: monthlySales,
+      targetRevenue: monthlyRevenue,
       requiredLeads: monthlyLeads,
     });
     d2.setMonth(d2.getMonth() + 1);
@@ -54,6 +56,7 @@ export async function POST(request) {
     data: {
       organizationId: session.user.organizationId,
       targetSales: parseInt(targetSales),
+      targetRevenue: parseFloat(targetRevenue) || 0,
       targetConversion: parseFloat(targetConversion),
       startDate: start,
       endDate: end,
@@ -72,14 +75,15 @@ export async function POST(request) {
     const upsertPromises = [];
     months.forEach(m => {
       const share = Math.round(m.targetSales / employees.length);
+      const revenueShare = Number((m.targetRevenue / employees.length).toFixed(2));
       employees.forEach(emp => {
         upsertPromises.push(
           prisma.employeeMonthlyPlan.upsert({
             where: {
               userId_month_year: { userId: emp.id, month: m.month, year: m.year },
             },
-            update: { targetSales: share },
-            create: { userId: emp.id, month: m.month, year: m.year, targetSales: share },
+            update: { targetSales: share, targetRevenue: revenueShare },
+            create: { userId: emp.id, month: m.month, year: m.year, targetSales: share, targetRevenue: revenueShare },
           })
         );
       });

@@ -12,6 +12,8 @@ export default function SettingsPage() {
     email: '',
     workStartTime: '09:00',
     workEndTime: '18:00',
+    latenessThreshold: '15',
+    reportSubmissionThreshold: '15',
     latenessPenalty: '50000',
   });
   const [loading, setLoading] = useState(true);
@@ -26,7 +28,9 @@ export default function SettingsPage() {
         email: data.email || '',
         workStartTime: data.workStartTime || '09:00',
         workEndTime: data.workEndTime || '18:00',
-        latenessPenalty: data.latenessPenalty || '50000',
+        latenessThreshold: String(data.latenessThreshold ?? 15),
+        reportSubmissionThreshold: String(data.reportSubmissionThreshold ?? 15),
+        latenessPenalty: String(data.latenessPenalty ?? 50000),
       });
       setLoading(false);
     });
@@ -37,17 +41,41 @@ export default function SettingsPage() {
     else setSavingWork(true);
 
     try {
-       await fetch('/api/settings', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify(form)
-       });
-       
-       if (update) update();
+       const res = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form)
+        });
+       const data = await res.json();
 
-       setTimeout(() => {
-         if (type === 'org') setSavingOrg(false);
-         else setSavingWork(false);
+       if (!res.ok) {
+         throw new Error(data.error || 'Saqlashda xatolik yuz berdi');
+       }
+
+       setForm({
+         organizationName: data.organization?.name || '',
+         name: data.name || '',
+         email: data.email || '',
+         workStartTime: data.workStartTime || '09:00',
+         workEndTime: data.workEndTime || '18:00',
+         latenessThreshold: String(data.latenessThreshold ?? 15),
+         reportSubmissionThreshold: String(data.reportSubmissionThreshold ?? 15),
+         latenessPenalty: String(data.latenessPenalty ?? 50000),
+       });
+        
+       if (update) {
+         await update({
+           user: {
+             name: data.name,
+             email: data.email,
+             organizationName: data.organization?.name || '',
+           },
+         });
+       }
+
+        setTimeout(() => {
+          if (type === 'org') setSavingOrg(false);
+          else setSavingWork(false);
        }, 800);
     } catch (e) {
        console.error(e);
@@ -89,10 +117,14 @@ export default function SettingsPage() {
                 <div className="form-group"><label className="form-label">Ish boshlash vaqti</label><input className="form-input" type="time" style={{background: 'var(--bg-elevated)'}} value={form.workStartTime} onChange={e => setForm({...form, workStartTime: e.target.value})} /></div>
                 <div className="form-group"><label className="form-label">Ish tugash vaqti</label><input className="form-input" type="time" style={{background: 'var(--bg-elevated)'}} value={form.workEndTime} onChange={e => setForm({...form, workEndTime: e.target.value})} /></div>
               </div>
+              <div className="form-row" style={{ marginTop: '16px' }}>
+                <div className="form-group"><label className="form-label">Ishga kechikish intervali (daq)</label><input className="form-input" type="number" min="0" style={{background: 'var(--bg-elevated)'}} value={form.latenessThreshold} onChange={e => setForm({...form, latenessThreshold: e.target.value})} placeholder="15" /></div>
+                <div className="form-group"><label className="form-label">Hisobot kechikish intervali (daq)</label><input className="form-input" type="number" min="0" style={{background: 'var(--bg-elevated)'}} value={form.reportSubmissionThreshold} onChange={e => setForm({...form, reportSubmissionThreshold: e.target.value})} placeholder="15" /></div>
+              </div>
               <div className="form-group">
                 <label className="form-label">Kechikish uchun jarima summasi (so'm)</label>
                 <input className="form-input" type="number" style={{background: 'var(--bg-elevated)'}} value={form.latenessPenalty} onChange={e => setForm({...form, latenessPenalty: e.target.value})} placeholder="50000" />
-                <div className="form-hint" style={{ marginTop: '8px', opacity: 0.6, fontSize: '11px' }}>Kechikish chegarasidan oshib ketganda belgilangan jarima summasi.</div>
+                <div className="form-hint" style={{ marginTop: '8px', opacity: 0.6, fontSize: '11px' }}>Ishga yoki hisobotga belgilangan intervaldan kech qolinsa shu jarima qo'llanadi.</div>
               </div>
               <button className="btn btn-primary" style={{ width: '100%', marginTop: '12px', fontSize: '11px' }} onClick={() => handleSave('work')} disabled={savingWork}>
                 {savingWork ? ' MUVAFFARIYATLI SAQLANDI' : 'TARTIBOTLARNI SAQLASH'}

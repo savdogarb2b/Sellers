@@ -19,7 +19,7 @@ export async function POST(request) {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== 'ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { organizationName, name, email, workStartTime, workEndTime, latenessPenalty } = await request.json();
+  const { organizationName, name, email, workStartTime, workEndTime, latenessPenalty, latenessThreshold, reportSubmissionThreshold } = await request.json();
 
   // Update organization
   if (session.user.organizationId) {
@@ -38,6 +38,8 @@ export async function POST(request) {
       workStartTime,
       workEndTime,
       latenessPenalty: Number(latenessPenalty) || 0,
+      latenessThreshold: Number(latenessThreshold) || 0,
+      reportSubmissionThreshold: Number(reportSubmissionThreshold) || 0,
     },
     include: { organization: true },
   });

@@ -32,8 +32,11 @@ export default function CheckinPage() {
       if (today) {
         setTodayAttendance(today);
         setStatus('done');
+        const defaultWarningMessage = me?.latenessMessage || 'Hozircha ogohlantirish berildi. 3-kechikishdan boshlab jarima yoziladi.';
         setMessage(today.isLate
-          ? `Kechikib keldingiz (${today.lateMinutes} daqiqa, jarima: ${today.penaltyApplied?.toLocaleString()} so'm)`
+          ? ((today.warningIssued || me?.latenessState === 'WARNING')
+              ? `Kechikib keldingiz (${today.lateMinutes} daqiqa). ${today.warningMessage || defaultWarningMessage}`
+              : `Kechikib keldingiz (${today.lateMinutes} daqiqa, jarima: ${today.penaltyApplied?.toLocaleString()} so'm)`) 
           : 'Bugun muvaffaqiyatli keldingiz! ');
       } else {
         setStatus('ready');
@@ -75,7 +78,9 @@ export default function CheckinPage() {
         setStatus('done');
         setTodayAttendance(data);
         setMessage(data.isLate
-          ? ` Kechikib keldingiz! (${data.lateMinutes} daqiqa, jarima: ${data.penaltyApplied?.toLocaleString()} so'm)`
+          ? (data.warningIssued
+              ? `Kechikib keldingiz! (${data.lateMinutes} daqiqa). ${data.warningMessage}`
+              : `Kechikib keldingiz! (${data.lateMinutes} daqiqa, jarima: ${data.penaltyApplied?.toLocaleString()} so'm)`) 
           : ' Muvaffaqiyatli keldingiz!');
         const upd = await fetch('/api/attendance').then(r => r.json());
         setAllAttendance(upd);
@@ -174,6 +179,16 @@ export default function CheckinPage() {
                       <div style={{ padding: '8px 16px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)' }}>
                         <div style={{ fontSize: '9px', color: 'var(--danger-400)', textTransform: 'uppercase' }}>Kechikish</div>
                         <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--danger-400)' }}>{todayAttendance.lateMinutes} daq</div>
+                      </div>
+                    )}
+                    {todayAttendance.isLate && (
+                      <div style={{ padding: '8px 16px', borderRadius: '12px', background: (todayAttendance.warningIssued || userData?.latenessState === 'WARNING') ? 'rgba(245, 158, 11, 0.08)' : 'rgba(239, 68, 68, 0.05)', border: (todayAttendance.warningIssued || userData?.latenessState === 'WARNING') ? '1px solid rgba(245, 158, 11, 0.18)' : '1px solid rgba(239, 68, 68, 0.1)' }}>
+                        <div style={{ fontSize: '9px', color: (todayAttendance.warningIssued || userData?.latenessState === 'WARNING') ? 'var(--warning-500)' : 'var(--danger-400)', textTransform: 'uppercase' }}>
+                          {(todayAttendance.warningIssued || userData?.latenessState === 'WARNING') ? 'Ogohlantirish' : 'Jarima holati'}
+                        </div>
+                        <div style={{ fontSize: '12px', fontWeight: 800, color: (todayAttendance.warningIssued || userData?.latenessState === 'WARNING') ? 'var(--warning-500)' : 'var(--danger-400)' }}>
+                          {(todayAttendance.warningIssued || userData?.latenessState === 'WARNING') ? `${todayAttendance.lateCountTotal || userData?.lateAttendanceCount || 1}-kechikish` : 'Jarima yozildi'}
+                        </div>
                       </div>
                     )}
                   </div>

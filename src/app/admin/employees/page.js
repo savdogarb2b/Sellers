@@ -5,7 +5,7 @@ import Navbar from '@/components/Navbar';
 
 const emptyForm = {
   name: '', fixedSalary: '', workStartTime: '09:00', workEndTime: '18:00',
-  latenessThreshold: '15', latenessPenalty: '50000'
+  latenessThreshold: '15', reportSubmissionThreshold: '15', latenessPenalty: '50000'
 };
 
 export default function EmployeesPage() {
@@ -14,22 +14,41 @@ export default function EmployeesPage() {
   const [showModal, setShowModal] = useState(false);
   const [editEmp, setEditEmp] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [defaultForm, setDefaultForm] = useState(emptyForm);
   const [kpis, setKpis] = useState([{ name: '', targetValue: '' }]);
   const [saving, setSaving] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState(null);
   const [showCredentials, setShowCredentials] = useState(null);
 
   useEffect(() => { fetchData(); }, []);
-  const fetchData = async () => { const r = await fetch('/api/employees'); setEmployees(await r.json()); setLoading(false); };
+  const fetchData = async () => {
+    const [employeesRes, settingsRes] = await Promise.all([
+      fetch('/api/employees'),
+      fetch('/api/settings'),
+    ]);
+    const employeesData = await employeesRes.json();
+    const settingsData = await settingsRes.json();
+    const nextDefaultForm = {
+      ...emptyForm,
+      workStartTime: settingsData.workStartTime || emptyForm.workStartTime,
+      workEndTime: settingsData.workEndTime || emptyForm.workEndTime,
+      latenessPenalty: String(settingsData.latenessPenalty ?? emptyForm.latenessPenalty),
+      latenessThreshold: String(settingsData.latenessThreshold ?? emptyForm.latenessThreshold),
+      reportSubmissionThreshold: String(settingsData.reportSubmissionThreshold ?? emptyForm.reportSubmissionThreshold),
+    };
+    setEmployees(employeesData);
+    setDefaultForm(nextDefaultForm);
+    setLoading(false);
+  };
 
-  const openCreate = () => { setEditEmp(null); setForm(emptyForm); setKpis([{ name: '', targetValue: '' }]); setShowModal(true); };
+  const openCreate = () => { setEditEmp(null); setForm(defaultForm); setKpis([{ name: '', targetValue: '' }]); setShowModal(true); };
   const openEdit = (emp, e) => {
     e.stopPropagation();
     setEditEmp(emp);
     setForm({
       name: emp.name, fixedSalary: emp.fixedSalary || '',
       workStartTime: emp.workStartTime || '09:00', workEndTime: emp.workEndTime || '18:00',
-      latenessThreshold: emp.latenessThreshold || '15', latenessPenalty: emp.latenessPenalty || '50000'
+      latenessThreshold: String(emp.latenessThreshold ?? 15), reportSubmissionThreshold: String(emp.reportSubmissionThreshold ?? 15), latenessPenalty: String(emp.latenessPenalty ?? 50000)
     });
     setKpis(emp.kpis?.length > 0 ? emp.kpis.map(k => ({ name: k.name, targetValue: k.targetValue })) : [{ name: '', targetValue: '' }]);
     setShowModal(true);
@@ -103,6 +122,7 @@ export default function EmployeesPage() {
                 const empSales = emp.dailyReports?.reduce((s, r) => s + (r.sales || 0), 0) || 0;
                 const empTotalLeads = emp.dailyReports?.reduce((s, r) => s + (r.leadStatuses ? r.leadStatuses.reduce((acc, ls) => acc + (ls.count || 0), 0) : 0), 0) || 0;
                 const empConv = empTotalLeads > 0 ? Math.round((empSales / empTotalLeads) * 100) : 0;
+                const latenessColor = emp.latenessState === 'PENALTY' ? 'var(--danger-500)' : emp.latenessState === 'WARNING' ? 'var(--warning-500)' : 'var(--accent-teal)';
                 
                 if (emp.dailyReports && emp.dailyReports.length > 0) {
                   const sorted = [...emp.dailyReports].sort((a,b) => new Date(b.date) - new Date(a.date));
@@ -137,8 +157,11 @@ export default function EmployeesPage() {
                             {streak >= 3 && <span style={{ fontSize: '12px' }} title={`${streak} kun streak`}>🔥</span>}
                             {empConv >= 20 && empSales >= 5 && <span style={{ fontSize: '12px' }} title="Usta Konversiya">💎</span>}
                           </div>
-                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>{emp.role || 'SOTUVCHI'}</div>
-                       </div>
+                           <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>{emp.role || 'SOTUVCHI'}</div>
+                           <div style={{ fontSize: '10px', color: latenessColor, fontWeight: 700, marginTop: '4px' }}>
+                             {emp.latenessMessage}
+                           </div>
+                        </div>
                        <div style={{ textAlign: 'right' }}>
                           <div style={{ fontSize: '16px', fontWeight: 800, color: kpiAvg >= 80 ? 'var(--accent-teal)' : kpiAvg >= 50 ? 'var(--primary-500)' : 'var(--danger-500)' }}>{kpiAvg}%</div>
                           <div style={{ fontSize: '9px', color: 'var(--text-muted)' }}>KPI</div>
@@ -154,7 +177,17 @@ export default function EmployeesPage() {
                           <div style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '2px' }}>Jarimalar</div>
                           <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--danger-500)' }}>-{totalPen.toLocaleString()}</div>
                        </div>
-                    </div>
+                       <div style={{ padding: '10px', background: 'var(--bg-input)', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
+                          <div style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '2px' }}>Kechikishlar</div>
+                          <div style={{ fontSize: '13px', fontWeight: 800, color: latenessColor }}>{emp.lateAttendanceCount || 0} ta</div>
+                       </div>
+                       <div style={{ padding: '10px', background: 'var(--bg-input)', borderRadius: '6px', border: '1px solid var(--border-subtle)' }}>
+                          <div style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '2px' }}>Holat</div>
+                          <div style={{ fontSize: '13px', fontWeight: 800, color: latenessColor }}>
+                            {emp.latenessState === 'PENALTY' ? 'Jarima' : emp.latenessState === 'WARNING' ? 'Ogohlantirish' : 'Normal'}
+                          </div>
+                       </div>
+                     </div>
 
                     {isOpen && (
                       <div className="animate-in" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -220,6 +253,16 @@ export default function EmployeesPage() {
                     <div className="form-group" style={{ flex: 1 }}>
                       <label className="form-label">Ish vaqti (tugash)</label>
                       <input className="form-input" type="time" value={form.workEndTime} onChange={e => setForm({...form, workEndTime: e.target.value})} />
+                    </div>
+                  </div>
+                  <div className="form-row" style={{ marginTop: '16px' }}>
+                    <div className="form-group" style={{ flex: 1 }}>
+                      <label className="form-label">Ishga kechikish intervali (daq)</label>
+                      <input className="form-input" type="number" min="0" value={form.latenessThreshold} onChange={e => setForm({...form, latenessThreshold: e.target.value})} placeholder="15" />
+                    </div>
+                    <div className="form-group" style={{ flex: 1 }}>
+                      <label className="form-label">Hisobot kechikish intervali (daq)</label>
+                      <input className="form-input" type="number" min="0" value={form.reportSubmissionThreshold} onChange={e => setForm({...form, reportSubmissionThreshold: e.target.value})} placeholder="15" />
                     </div>
                   </div>
                   

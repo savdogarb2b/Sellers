@@ -69,6 +69,13 @@ export default function FinancePage() {
     fetchAll();
   };
 
+  const handleDeleteRecord = async (id) => {
+    const url = assignTab === 'penalty' ? `/api/penalty-records?id=${id}` : `/api/bonus-records?id=${id}`;
+    if (!confirm(assignTab === 'penalty' ? 'Jarimani bekor qilmoqchimisiz?' : 'Bonusni bekor qilmoqchimisiz?')) return;
+    await fetch(url, { method: 'DELETE' });
+    fetchAll();
+  };
+
   const currentTemplates = templateTab === 'penalties' ? penalties : bonuses;
   const records = assignTab === 'penalty' ? penaltyRecords : bonusRecords;
 
@@ -150,10 +157,13 @@ export default function FinancePage() {
                             <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>{r.user?.name}</div>
                             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>{new Date(r.date).toLocaleString('uz')} — <span style={{ color: 'var(--text-primary)' }}>{r.reason}</span></div>
                           </div>
-                          <div style={{ textAlign: 'right' }}>
+                          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                             <div style={{ fontWeight: 800, fontSize: '16px', color: assignTab === 'penalty' ? 'var(--danger-500)' : 'var(--accent-teal)' }}>
                               {assignTab === 'penalty' ? '-' : '+'}{r.amount.toLocaleString()} <span style={{ fontSize: '10px' }}>so'm</span>
                             </div>
+                            <button className="btn btn-secondary btn-sm" style={{ padding: '6px 10px', fontSize: '10px' }} onClick={() => handleDeleteRecord(r.id)}>
+                              Bekor qilish
+                            </button>
                           </div>
                         </div>
                       ))}

@@ -98,6 +98,12 @@ export default function EmployeeDashboard() {
   const totalBonuses = bonuses.reduce((s, r) => s + (r.amount || 0), 0);
   const todayAttendance = attendance.find(a => new Date(a.date).toDateString() === new Date().toDateString());
   const lateCount = attendance.filter(a => a.isLate).length;
+  const latenessState = userData?.latenessState || (lateCount === 0 ? 'NORMAL' : lateCount < 3 ? 'WARNING' : 'PENALTY');
+  const latenessMessage = userData?.latenessMessage || (lateCount === 0
+    ? 'Hozircha kechikish qayd etilmagan'
+    : lateCount < 3
+      ? `${lateCount}-kechikish. Hozircha ogohlantirish.`
+      : `${lateCount}-kechikish. Jarima qo'llanadi.`);
   const todayReport = reports.find(r => new Date(r.date).toDateString() === new Date().toDateString());
   const hasReportToday = !!todayReport;
 
@@ -197,6 +203,13 @@ export default function EmployeeDashboard() {
               <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--primary-400)', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '1px' }}>AI Maslahat</div>
               <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{aiTip}</div>
             </div>
+          </div>
+
+          <div style={{ background: latenessState === 'PENALTY' ? 'rgba(239, 68, 68, 0.06)' : latenessState === 'WARNING' ? 'rgba(245, 158, 11, 0.08)' : 'rgba(16, 185, 129, 0.05)', borderLeft: `4px solid ${latenessState === 'PENALTY' ? 'var(--danger-500)' : latenessState === 'WARNING' ? 'var(--warning-500)' : 'var(--accent-teal)'}`, padding: '14px 18px', borderRadius: '12px', marginBottom: '24px', border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: latenessState === 'PENALTY' ? 'var(--danger-500)' : latenessState === 'WARNING' ? 'var(--warning-500)' : 'var(--accent-teal)', marginBottom: '4px' }}>
+              Kechikish Nazorati
+            </div>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{latenessMessage}</div>
           </div>
 
           <div className="stats-grid">

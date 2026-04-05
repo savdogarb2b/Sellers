@@ -39,3 +39,25 @@ export async function POST(request) {
 
   return NextResponse.json(record);
 }
+
+export async function DELETE(request) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== 'ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  if (!id) return NextResponse.json({ error: 'ID kerak' }, { status: 400 });
+
+  const record = await prisma.penaltyRecord.findFirst({
+    where: {
+      id,
+      user: { organizationId: session.user.organizationId },
+    },
+    select: { id: true },
+  });
+
+  if (!record) return NextResponse.json({ error: 'Record topilmadi' }, { status: 404 });
+
+  await prisma.penaltyRecord.delete({ where: { id } });
+  return NextResponse.json({ success: true });
+}

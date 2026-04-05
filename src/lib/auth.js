@@ -43,18 +43,29 @@ export const authOptions = {
     })
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.role = user.role;
         token.organizationId = user.organizationId;
         token.organizationName = user.organizationName;
         token.orgStatus = user.orgStatus;
+        token.name = user.name;
+        token.email = user.email;
       }
+
+      if (trigger === 'update' && session?.user) {
+        if (session.user.name !== undefined) token.name = session.user.name;
+        if (session.user.email !== undefined) token.email = session.user.email;
+        if (session.user.organizationName !== undefined) token.organizationName = session.user.organizationName;
+      }
+
       return token;
     },
     async session({ session, token }) {
       if (token) {
         session.user.id = token.sub;
+        session.user.name = token.name;
+        session.user.email = token.email;
         session.user.role = token.role;
         session.user.organizationId = token.organizationId;
         session.user.organizationName = token.organizationName;

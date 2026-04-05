@@ -47,6 +47,7 @@ model User {
   workEndTime    String?  // "18:00"
   latenessPenalty   Float   @default(0)
   latenessThreshold Int     @default(15) // minutes after work start before penalty applies
+  reportSubmissionThreshold Int @default(15) // minutes after work end before report penalty applies
   locationLat    Float?
   locationLng    Float?
   locationRadius Float?   // meters
@@ -144,6 +145,7 @@ model SalesStrategy {
   id               String @id @default(cuid())
   organizationId   String
   targetSales      Int
+  targetRevenue    Float  @default(0)
   targetConversion Float
   startDate        DateTime
   endDate          DateTime
@@ -159,6 +161,7 @@ model SalesStrategyMonth {
   month        Int
   year         Int
   targetSales  Int
+  targetRevenue Float @default(0)
   requiredLeads Int
   actualSales  Int    @default(0)
 
@@ -234,6 +237,7 @@ model EmployeeMonthlyPlan {
   month       Int
   year        Int
   targetSales Int      @default(0)
+  targetRevenue Float   @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

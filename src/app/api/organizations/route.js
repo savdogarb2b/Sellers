@@ -36,6 +36,9 @@ export async function POST(request) {
 
   const body = await request.json();
   const { orgName, orgAddress, orgPhone, adminName, description, maxEmployees, subscriptionPlan } = body;
+  const parsedMaxEmployees = maxEmployees === undefined || maxEmployees === null || maxEmployees === ''
+    ? 50
+    : Number(maxEmployees);
 
   if (!orgName || !adminName) {
     return NextResponse.json({ error: 'Tashkilot nomi va admin ismi kerak' }, { status: 400 });
@@ -50,7 +53,7 @@ export async function POST(request) {
       address: orgAddress || '',
       phone: orgPhone || '',
       description: description || '',
-      maxEmployees: maxEmployees || 50,
+      maxEmployees: Number.isNaN(parsedMaxEmployees) ? 50 : parsedMaxEmployees,
       subscriptionPlan: subscriptionPlan || 'BASIC',
       status: 'ACTIVE',
     },
@@ -85,6 +88,9 @@ export async function PUT(request) {
 
   const body = await request.json();
   const { id, name, address, phone, description, maxEmployees, subscriptionPlan } = body;
+  const parsedMaxEmployees = maxEmployees === undefined || maxEmployees === null || maxEmployees === ''
+    ? undefined
+    : Number(maxEmployees);
 
   if (!id) {
     return NextResponse.json({ error: 'ID kerak' }, { status: 400 });
@@ -97,7 +103,7 @@ export async function PUT(request) {
       ...(address !== undefined && { address }),
       ...(phone !== undefined && { phone }),
       ...(description !== undefined && { description }),
-      ...(maxEmployees !== undefined && { maxEmployees: Number(maxEmployees) }),
+      ...(parsedMaxEmployees !== undefined && !Number.isNaN(parsedMaxEmployees) && { maxEmployees: parsedMaxEmployees }),
       ...(subscriptionPlan !== undefined && { subscriptionPlan }),
     },
   });

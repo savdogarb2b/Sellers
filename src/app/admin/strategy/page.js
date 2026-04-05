@@ -9,8 +9,10 @@ export default function StrategyPage() {
   const [plans, setPlans] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showDistributeModal, setShowDistributeModal] = useState(null);
-  const [form, setForm] = useState({ targetSales: '', targetConversion: '', startDate: '', endDate: '' });
+  const [form, setForm] = useState({ targetSales: '', targetRevenue: '', targetConversion: '', startDate: '', endDate: '' });
   const [loading, setLoading] = useState(true);
+
+  const formatCurrency = (amount) => new Intl.NumberFormat('uz-UZ').format(Number(amount || 0));
 
   useEffect(() => { 
     Promise.all([
@@ -28,12 +30,12 @@ export default function StrategyPage() {
     });
   }, []);
 
-  const handleAssignPlan = async (userId, targetSales) => {
+  const handleAssignPlan = async (userId, targetSales, targetRevenue) => {
     const { month, year } = showDistributeModal;
     await fetch('/api/employee-plans', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, month, year, targetSales: targetSales || 0 })
+      body: JSON.stringify({ userId, month, year, targetSales: targetSales || 0, targetRevenue: targetRevenue || 0 })
     });
     const p = await fetch('/api/employee-plans').then(r => r.json());
     setPlans(p);
@@ -51,7 +53,7 @@ export default function StrategyPage() {
     setStrategies(Array.isArray(d) ? d : []);
     setPlans(Array.isArray(p) ? p : []);
     setShowModal(false);
-    setForm({ targetSales: '', targetConversion: '', startDate: '', endDate: '' });
+    setForm({ targetSales: '', targetRevenue: '', targetConversion: '', startDate: '', endDate: '' });
   };
 
   const months = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
@@ -89,6 +91,9 @@ export default function StrategyPage() {
                   <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--primary-400)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>STRATEGIYA MAQSADI</div>
                   <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
                     {s.targetSales} ta sotuv
+                  </div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--warning-500)', marginTop: '8px' }}>
+                    Aylanma maqsadi: {formatCurrency(s.targetRevenue)} so'm
                   </div>
                   <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginTop: '4px' }}>
                     MUDDAT: {new Date(s.startDate).toLocaleDateString('uz')} — {new Date(s.endDate).toLocaleDateString('uz')}
@@ -153,6 +158,11 @@ export default function StrategyPage() {
                         </div>
                       </div>
 
+                      <div style={{ marginBottom: '16px', background: 'var(--bg-input)', border: '1px solid var(--border-subtle)', borderRadius: '10px', padding: '10px 12px' }}>
+                        <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>OYLIK AYLANMA MAQSADI</div>
+                        <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--warning-500)' }}>{formatCurrency(m.targetRevenue)} so'm</div>
+                      </div>
+
                       <div style={{ 
                         margin: '0 -20px -20px -20px',
                         padding: '12px 20px',
@@ -166,7 +176,7 @@ export default function StrategyPage() {
                         <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--primary-400)' }}>{m.requiredLeads} ta lid</span>
                       </div>
                       <button 
-                        onClick={() => setShowDistributeModal({ month: m.month, year: m.year, mainTarget: m.targetSales })} 
+                        onClick={() => setShowDistributeModal({ month: m.month, year: m.year, mainTarget: m.targetSales, mainRevenue: m.targetRevenue })} 
                         className="btn btn-secondary" 
                         style={{ padding: '8px 10px', marginTop: '32px', width: '100%', justifyContent: 'center' }}>
                         Xodimlarga taqsimlash
@@ -194,6 +204,12 @@ export default function StrategyPage() {
                       <label className="form-label">Maqsadli sotuv soni</label>
                       <input className="form-input" type="number" value={form.targetSales} onChange={e => setForm({...form, targetSales: e.target.value})} required placeholder="500" />
                     </div>
+                    <div className="form-group" style={{ flex: 1 }}>
+                      <label className="form-label">Umumiy aylanma summasi</label>
+                      <input className="form-input" type="number" min="0" step="0.01" value={form.targetRevenue} onChange={e => setForm({...form, targetRevenue: e.target.value})} required placeholder="250000000" />
+                    </div>
+                  </div>
+                  <div className="form-row" style={{ marginTop: '16px' }}>
                     <div className="form-group" style={{ flex: 1 }}>
                       <label className="form-label">Konversiya (%)</label>
                       <input className="form-input" type="number" step="0.1" value={form.targetConversion} onChange={e => setForm({...form, targetConversion: e.target.value})} required placeholder="15.5" />
@@ -225,30 +241,53 @@ export default function StrategyPage() {
               <div className="modal-header" style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-color)' }}>
                 <div>
                   <div style={{ fontSize: '14px', fontWeight: 700 }}>Sotuv rejasini taqsimlash</div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>{months[showDistributeModal.month - 1]} {showDistributeModal.year} | Umumiy reja: {showDistributeModal.mainTarget}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>{months[showDistributeModal.month - 1]} {showDistributeModal.year} | Umumiy reja: {showDistributeModal.mainTarget} ta | Aylanma: {formatCurrency(showDistributeModal.mainRevenue)} so'm</div>
                 </div>
                 <button className="modal-close" onClick={() => setShowDistributeModal(null)}>×</button>
               </div>
               <div className="modal-body" style={{ padding: '24px', maxHeight: '60vh', overflowY: 'auto' }}>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '16px' }}>Maqsadlarni kiritib Enter tugmasini bosing yoki maydondan chiqing (avtomat saqlanadi).</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '16px' }}>Xodimlar uchun sotuv soni va aylanma summasi teng taqsimlanadi, admin esa istasa qo'lda o'zgartirishi mumkin.</div>
                 {employees.map(emp => {
                   const empPlan = plans.find(p => p.userId === emp.id && p.month === showDistributeModal.month && p.year === showDistributeModal.year);
+                  const defaultSales = employees.length > 0 ? Math.round(showDistributeModal.mainTarget / employees.length) : 0;
+                  const defaultRevenue = employees.length > 0 ? Number((showDistributeModal.mainRevenue / employees.length).toFixed(2)) : 0;
                   return (
-                    <div key={emp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', background: 'var(--bg-input)', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                    <div key={emp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', background: 'var(--bg-input)', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-subtle)', gap: '12px' }}>
                       <div>
                         <div style={{ fontWeight: 700, fontSize: '13px' }}>{emp.name}</div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                         <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Reja:</span>
                         <input 
                           type="number" 
                           className="form-input" 
                           style={{ width: '80px', textAlign: 'center', padding: '6px' }} 
-                          defaultValue={empPlan?.targetSales || ''} 
+                          defaultValue={empPlan?.targetSales ?? defaultSales} 
                           placeholder="0"
                           title="Qiymatni kiritib Enter bosing"
                           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } }}
-                          onBlur={(e) => handleAssignPlan(emp.id, e.target.value)}
+                          onBlur={(e) => handleAssignPlan(
+                            emp.id,
+                            e.target.value,
+                            e.target.parentElement.querySelector('[data-revenue-input]')?.value || 0
+                          )}
+                        />
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Aylanma:</span>
+                        <input 
+                          type="number"
+                          step="0.01"
+                          data-revenue-input
+                          className="form-input"
+                          style={{ width: '120px', textAlign: 'center', padding: '6px' }}
+                          defaultValue={empPlan?.targetRevenue ?? defaultRevenue}
+                          placeholder="0"
+                          title="Qiymatni kiritib Enter bosing"
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } }}
+                          onBlur={(e) => handleAssignPlan(
+                            emp.id,
+                            e.target.parentElement.querySelector('input[type="number"]')?.value || 0,
+                            e.target.value
+                          )}
                         />
                       </div>
                     </div>
