@@ -56,6 +56,23 @@ export default function StrategyPage() {
     setForm({ targetSales: '', targetRevenue: '', targetConversion: '', startDate: '', endDate: '' });
   };
 
+  const handleDeleteStrategy = async (strategyId) => {
+    if (!confirm('Strategiyani o\'chirmoqchimisiz? Unga bog\'liq oy rejalari ham tozalanadi.')) return;
+
+    await fetch(`/api/strategy?id=${strategyId}`, {
+      method: 'DELETE',
+    });
+
+    const [s, p] = await Promise.all([
+      fetch('/api/strategy').then(r => r.ok ? r.json() : []),
+      fetch('/api/employee-plans').then(r => r.ok ? r.json() : []),
+    ]);
+
+    setStrategies(Array.isArray(s) ? s : []);
+    setPlans(Array.isArray(p) ? p : []);
+    if (showDistributeModal) setShowDistributeModal(null);
+  };
+
   const months = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
 
   return (
@@ -99,11 +116,16 @@ export default function StrategyPage() {
                     MUDDAT: {new Date(s.startDate).toLocaleDateString('uz')} — {new Date(s.endDate).toLocaleDateString('uz')}
                   </div>
                 </div>
-                <div style={{ textAlign: 'right', background: 'var(--bg-input)', padding: '12px 20px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
-                  <div style={{ fontSize: '9px', color: 'var(--accent-teal)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, marginBottom: '2px' }}>
-                    MAQSADLI KONVERSIYA
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ textAlign: 'right', background: 'var(--bg-input)', padding: '12px 20px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ fontSize: '9px', color: 'var(--accent-teal)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, marginBottom: '2px' }}>
+                      MAQSADLI KONVERSIYA
+                    </div>
+                    <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--accent-teal)' }}>{s.targetConversion}%</div>
                   </div>
-                  <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--accent-teal)' }}>{s.targetConversion}%</div>
+                  <button className="btn btn-secondary" onClick={() => handleDeleteStrategy(s.id)} style={{ padding: '10px 14px', color: 'var(--danger-500)', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
+                    Strategiyani o'chirish
+                  </button>
                 </div>
               </div>
 

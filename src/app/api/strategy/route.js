@@ -94,3 +94,62 @@ export async function POST(request) {
 
   return NextResponse.json(strategy);
 }
+
+export async function DELETE(request) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== 'ADMIN' || !session.user.organizationId) {
+    return NextResponse.json({ error: 'Unauthorized or no organization' }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+
+  if (!id) {
+    return NextResponse.json({ error: 'Strategiya ID kerak' }, { status: 400 });
+  }
+
+  const strategy = await prisma.salesStrategy.findFirst({
+    where: { id, organizationId: session.user.organizationId },
+    include: { months: true },
+  });
+
+  if (!strategy) {
+    return NextResponse.json({ error: 'Strategiya topilmadi' }, { status: 404 });
+  }
+
+  const monthKeys = strategy.months.map(month => `${month.month}-${month.year}`);
+
+  await prisma.$transaction(async (tx) => {
+    const employees = await tx.user.findMany({
+      where: { organizationId: session.user.organizationId, role: 'EMPLOYEE' },
+      select: { id: true },
+    });
+
+    const otherStrategies = await tx.salesStrategy.findMany({
+      where: {
+        organizationId: session.user.organizationId,
+        id: { not: id },
+      },
+      include: { months: true },
+    });
+
+    const sharedMonthKeys = new Set(
+      otherStrategies.flatMap(item => item.months.map(month => `${month.month}-${month.year}`))
+    );
+
+    const removableMonths = strategy.months.filter(month => !sharedMonthKeys.has(`${month.month}-${month.year}`));
+
+    if (employees.length > 0 && removableMonths.length > 0) {
+      await tx.employeeMonthlyPlan.deleteMany({
+        where: {
+          userId: { in: employees.map(employee => employee.id) },
+          OR: removableMonths.map(month => ({ month: month.month, year: month.year })),
+        },
+      });
+    }
+
+    await tx.salesStrategy.delete({ where: { id } });
+  });
+
+  return NextResponse.json({ success: true, deletedMonths: monthKeys.length });
+}
