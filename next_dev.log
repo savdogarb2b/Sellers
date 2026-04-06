@@ -1,0 +1,38 @@
+
+> salescrm@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.1 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.137.232:3000
+- Environments: .env
+✓ Ready in 294ms
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+
+ HEAD / 200 in 317ms (next.js: 122ms, proxy.ts: 66ms, application-code: 130ms)
+ GET / 200 in 198ms (next.js: 36ms, proxy.ts: 49ms, application-code: 112ms)
+ GET /icon-192.png 404 in 301ms (next.js: 261ms, application-code: 40ms)
+ GET /api/auth/session 200 in 973ms (next.js: 957ms, application-code: 16ms)
+ GET /login 200 in 41ms (next.js: 20ms, proxy.ts: 5ms, application-code: 15ms)
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (file:///Users/shonazarxudayberganov/Documents/Новая папка/salescrm/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+ GET /api/auth/providers 200 in 22ms (next.js: 10ms, application-code: 12ms)
+ GET /api/auth/csrf 200 in 8ms (next.js: 2ms, application-code: 6ms)
+ POST /api/auth/callback/credentials 200 in 167ms (next.js: 3ms, application-code: 164ms)
+ GET /api/auth/session 200 in 7ms (next.js: 1337µs, application-code: 5ms)
+ GET /admin 200 in 77ms (next.js: 60ms, proxy.ts: 2ms, application-code: 14ms)
+ GET /admin 200 in 70ms (next.js: 7ms, proxy.ts: 21ms, application-code: 42ms)
+ GET /api/stats?period=monthly 200 in 61ms (next.js: 35ms, application-code: 26ms)
+ GET /api/stats?period=monthly 200 in 13ms (next.js: 1595µs, application-code: 12ms)
+✓ Finished filesystem cache database compaction in 29.9s
+ GET /api/auth/session 200 in 78ms (next.js: 40ms, application-code: 37ms)
+ GET /api/auth/session 200 in 57ms (next.js: 23ms, application-code: 34ms)
+ GET /api/auth/session 200 in 30ms (next.js: 12ms, application-code: 18ms)
+ GET /api/auth/session 200 in 43ms (next.js: 28ms, application-code: 15ms)
+ GET /api/auth/session 200 in 17ms (next.js: 8ms, application-code: 9ms)
+ GET /api/auth/session 200 in 16ms (next.js: 7ms, application-code: 9ms)
+ GET /api/auth/session 200 in 14ms (next.js: 7ms, application-code: 7ms)
+ GET /api/auth/session 200 in 17ms (next.js: 7ms, application-code: 10ms)
+ GET /api/auth/session 200 in 11ms (next.js: 5ms, application-code: 6ms)
+ GET /api/auth/session 200 in 12ms (next.js: 5ms, application-code: 7ms)
+ GET /api/auth/session 200 in 28ms (next.js: 17ms, application-code: 11ms)
+ GET /api/auth/session 200 in 19ms (next.js: 7ms, application-code: 12ms)

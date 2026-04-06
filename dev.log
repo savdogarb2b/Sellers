@@ -1,0 +1,25 @@
+
+> salescrm@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.1 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.137.232:3000
+- Environments: .env
+✓ Ready in 629ms
+○ Compiling middleware ...
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+
+○ Compiling /api/stats ...
+ GET /api/stats 401 in 9.3s (next.js: 9.2s, application-code: 76ms)
+○ Compiling / ...
+ GET / 200 in 25.1s (next.js: 24.9s, proxy.ts: 23ms, application-code: 185ms)
+ GET /icon.svg 404 in 271ms (next.js: 181ms, application-code: 90ms)
+ GET /icon-192.png 404 in 261ms (next.js: 220ms, application-code: 42ms)
+ GET /api/auth/session 200 in 931ms (next.js: 922ms, application-code: 8ms)
+ GET /login 200 in 589ms (next.js: 562ms, proxy.ts: 12ms, application-code: 15ms)
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (file:///Users/shonazarxudayberganov/Documents/Новая папка/salescrm/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+ GET /api/auth/providers 200 in 36ms (next.js: 17ms, application-code: 19ms)
+ GET /api/auth/csrf 200 in 8ms (next.js: 1857µs, application-code: 6ms)
+ POST /api/auth/callback/credentials 401 in 161ms (next.js: 3ms, application-code: 158ms)
+ GET /api/auth/providers 200 in 3.1s (next.js: 3.1s, application-code: 14ms)

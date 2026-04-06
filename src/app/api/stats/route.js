@@ -3,9 +3,43 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { searchParams } = new URL(request.url);
+  const startDateStr = searchParams.get('startDate');
+  const endDateStr = searchParams.get('endDate');
+  const period = searchParams.get('period') || 'monthly';
+
+  let startDate = null;
+  let endDate = null;
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrowStart = new Date(todayStart);
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+
+  if (startDateStr && endDateStr) {
+    startDate = new Date(startDateStr);
+    endDate = new Date(endDateStr);
+    endDate.setHours(23, 59, 59, 999);
+  } else {
+    if (period === 'daily') {
+      startDate = todayStart;
+      endDate = tomorrowStart;
+    } else if (period === 'weekly') {
+      startDate = new Date(todayStart);
+      startDate.setDate(startDate.getDate() - 7);
+      endDate = tomorrowStart;
+    } else if (period === 'monthly') {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = tomorrowStart;
+    } else {
+      startDate = null;
+      endDate = null;
+    }
+  }
 
   const orgId = session.user.organizationId;
   const isSuperadmin = session.user.role === 'SUPERADMIN';
@@ -20,10 +54,6 @@ export async function GET() {
   }
 
   // ====== ADMIN STATS — 23+ METRICS ======
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const tomorrowStart = new Date(todayStart);
-  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -53,14 +83,21 @@ export async function GET() {
   const sumRevenue = (reports) => reports.reduce((sum, report) => sum + (report.revenue || 0), 0);
   const toPercent = (sales, leads) => leads > 0 ? Math.round((sales / leads) * 1000) / 10 : 0;
 
+  const filteredReports = startDate && endDate
+    ? allReports.filter(r => {
+        const reportDate = new Date(r.date);
+        return reportDate >= startDate && reportDate < endDate;
+      })
+    : allReports;
+
   // ---- SOTUV ----
-  const totalSales = sumSales(allReports);
-  const totalCalls = employees.reduce((sum, e) => sum + e.dailyReports.reduce((s, r) => s + r.totalCalls, 0), 0);
-  const totalQualityLeads = sumLeads(allReports);
+  const totalSales = sumSales(filteredReports);
+  const totalCalls = filteredReports.reduce((sum, r) => sum + r.totalCalls, 0);
+  const totalQualityLeads = sumLeads(filteredReports);
   const totalLeads = totalQualityLeads;
   const avgConversion = toPercent(totalSales, totalQualityLeads);
 
-  const totalRevenue = sumRevenue(allReports);
+  const totalRevenue = sumRevenue(filteredReports);
   const avgCheck = totalSales > 0 ? Math.round(totalRevenue / totalSales) : 0;
 
   const todayReports = allReports.filter(report => {
@@ -149,13 +186,14 @@ export async function GET() {
   ).length;
 
   const employeeConversions = employees.map(employee => {
-    const employeeMonthReports = employee.dailyReports.filter(report => {
+    const employeeFilteredReports = filteredReports.filter(report => {
       const reportDate = new Date(report.date);
-      return reportDate.getMonth() + 1 === currentMonth && reportDate.getFullYear() === currentYear;
+      const empReports = employee.dailyReports.map(r => r.id);
+      return empReports.includes(report.id);
     });
-    const employeeLeads = sumLeads(employeeMonthReports);
-    const employeeSales = sumSales(employeeMonthReports);
-    const employeeRevenue = sumRevenue(employeeMonthReports);
+    const employeeLeads = sumLeads(employeeFilteredReports);
+    const employeeSales = sumSales(employeeFilteredReports);
+    const employeeRevenue = sumRevenue(employeeFilteredReports);
     const todayAttendanceRecord = employee.attendances.find(attendance => {
       const attendanceDate = new Date(attendance.date);
       return attendanceDate >= todayStart && attendanceDate < tomorrowStart;
@@ -185,9 +223,12 @@ export async function GET() {
   });
 
   let strategyProgress = 0;
+  let strategyTargetSales = 0;
+  let strategyActualSales = 0;
   if (strategy) {
-    const totalActual = strategy.months.reduce((s, m) => s + m.actualSales, 0);
-    strategyProgress = strategy.targetSales > 0 ? Math.round(totalActual / strategy.targetSales * 100) : 0;
+    strategyTargetSales = strategy.targetSales;
+    strategyActualSales = strategy.months.reduce((s, m) => s + m.actualSales, 0);
+    strategyProgress = strategyTargetSales > 0 ? Math.round(strategyActualSales / strategyTargetSales * 100) : 0;
   }
 
   // ---- FUNNEL ----
@@ -207,10 +248,11 @@ export async function GET() {
   }));
 
   const funnelStageAnalytics = funnelStages.map((stage, index) => {
-    const count = stage.reportLeadStatuses.reduce((sum, item) => {
-      const reportDate = new Date(item.report.date);
-      if (reportDate.getMonth() + 1 !== currentMonth || reportDate.getFullYear() !== currentYear) return sum;
-      return sum + item.count;
+    const stageReportIds = new Set(stage.reportLeadStatuses.map(rls => rls.reportId));
+    const filteredStageReports = filteredReports.filter(r => stageReportIds.has(r.id));
+    const count = filteredStageReports.reduce((sum, r) => {
+      const reportLeadStatuses = stage.reportLeadStatuses.filter(rls => rls.reportId === r.id);
+      return sum + reportLeadStatuses.reduce((s, rls) => s + rls.count, 0);
     }, 0);
 
     if (index === 0) {
@@ -222,10 +264,11 @@ export async function GET() {
       };
     }
 
-    const previousCount = funnelStages[index - 1].reportLeadStatuses.reduce((sum, item) => {
-      const reportDate = new Date(item.report.date);
-      if (reportDate.getMonth() + 1 !== currentMonth || reportDate.getFullYear() !== currentYear) return sum;
-      return sum + item.count;
+    const prevStageReportIds = new Set(funnelStages[index - 1].reportLeadStatuses.map(rls => rls.reportId));
+    const prevFilteredStageReports = filteredReports.filter(r => prevStageReportIds.has(r.id));
+    const previousCount = prevFilteredStageReports.reduce((sum, r) => {
+      const reportLeadStatuses = funnelStages[index - 1].reportLeadStatuses.filter(rls => rls.reportId === r.id);
+      return sum + reportLeadStatuses.reduce((s, rls) => s + rls.count, 0);
     }, 0);
 
     const conversionFromPrev = previousCount > 0 ? Math.min(100, Math.round((count / previousCount) * 1000) / 10) : 0;
@@ -245,11 +288,18 @@ export async function GET() {
   }, null);
 
   // ---- TOP PERFORMER ----
-  const empSales = employees.map(e => ({
-    name: e.name,
-    sales: e.dailyReports.reduce((s, r) => s + r.sales, 0),
-  })).sort((a, b) => b.sales - a.sales);
-  const topPerformer = empSales[0] || { name: '—', sales: 0 };
+  const empSales = employees.map(e => {
+    const empReportIds = new Set(e.dailyReports.map(r => r.id));
+    const empFilteredReports = filteredReports.filter(r => empReportIds.has(r.id));
+    return {
+      name: e.name,
+      leads: sumLeads(empFilteredReports),
+      sales: sumSales(empFilteredReports),
+      revenue: sumRevenue(empFilteredReports),
+      conversion: toPercent(sumSales(empFilteredReports), sumLeads(empFilteredReports)),
+    };
+  }).sort((a, b) => b.sales - a.sales);
+  const topPerformer = empSales[0] || { name: '—', sales: 0, leads: 0, revenue: 0, conversion: 0 };
 
   return NextResponse.json({
     // Asosiy
@@ -305,6 +355,8 @@ export async function GET() {
     // Strategiya
     strategy,
     strategyProgress,
+    strategyTargetSales,
+    strategyActualSales,
 
     // Voronka
     funnelDistribution,
