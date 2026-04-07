@@ -121,6 +121,26 @@ export default function EmployeeChatPage() {
     setMessages([]);
   };
 
+  const downloadAsPDF = async (messageId) => {
+    const element = document.getElementById(`msg-${messageId}`);
+    if (!element) return;
+    
+    try {
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#111827' });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [canvas.width / 2, canvas.height / 2]
+      });
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
+      pdf.save(`AI_Yordamchi_${new Date().toISOString().slice(0, 10)}.pdf`);
+    } catch (e) {
+      console.error('PDF xatosi', e);
+      alert('PDF yuklashda xatolik yuz berdi');
+    }
+  };
+
   const ChartRenderer = ({ jsonStr }) => {
     try {
       const config = JSON.parse(jsonStr);
@@ -276,7 +296,7 @@ export default function EmployeeChatPage() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', width: '100%', paddingBottom: '20px' }}>
               {messages.map((m, i) => (
-                <div key={i} style={{ width: '100%', padding: '16px 20px', background: 'transparent' }}>
+                <div key={i} id={`msg-${m.id || i}`} style={{ width: '100%', padding: '16px 20px', background: 'transparent', position: 'relative' }}>
                   <div style={{ maxWidth: '850px', margin: '0 auto', display: 'flex', flexDirection: m.role === 'user' ? 'row-reverse' : 'row', gap: '20px' }}>
                     
                     <div style={{ flexShrink: 0, marginTop: '2px' }}>
@@ -295,8 +315,19 @@ export default function EmployeeChatPage() {
                       flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', 
                       alignItems: m.role === 'user' ? 'flex-end' : 'flex-start' 
                     }}>
-                      <div style={{ fontSize: '11px', fontWeight: 900, color: m.role === 'assistant' ? 'var(--primary)' : 'var(--text-3)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                        {m.role === 'assistant' ? 'AI Yordamchi' : 'Siz'}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: '8px' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 900, color: m.role === 'assistant' ? 'var(--primary)' : 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                          {m.role === 'assistant' ? 'AI Yordamchi' : 'Siz'}
+                        </div>
+                        {m.role === 'assistant' && (
+                          <button onClick={() => downloadAsPDF(m.id || i)} className="btn-hover" style={{
+                            background: 'transparent', border: 'none', color: 'var(--text-muted)',
+                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
+                            fontSize: '10px', textTransform: 'uppercase', fontWeight: 700
+                          }}>
+                            <Download size={12} /> PDF yuklash
+                          </button>
+                        )}
                       </div>
                       
                       {m.role === 'assistant' ? (

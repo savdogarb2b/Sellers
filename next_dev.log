@@ -132,3 +132,24 @@ Caused by:
     4: No such file or directory (os error 2)
 Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
 Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+
+thread 'tokio-runtime-worker' (761372) panicked at turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:224:17:
+Failed to restore task data (corrupted database or bug): Data for batch of 4 tasks
+
+Caused by:
+    0: Looking up typed data for 4 tasks from database failed
+    1: Unable to open static sorted file referenced from 00005420.meta
+    2: Unable to open static sorted file 00005417.sst
+    3: Failed to open SST file /Users/shonazarxudayberganov/Documents/Новая папка/salescrm/.next/dev/cache/turbopack/600cd2fed/00005417.sst
+    4: No such file or directory (os error 2)
+
+thread 'tokio-runtime-worker' (761372) panicked at turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:196:17:
+Failed to restore task data (corrupted database or bug): Data for TaskId 491739)
+
+Caused by:
+    0: Looking up task storage for TaskId 491739 from database failed
+    1: Unable to open static sorted file referenced from 00003287.meta
+    2: Unable to open static sorted file 00003285.sst
+    3: Failed to open SST file /Users/shonazarxudayberganov/Documents/Новая папка/salescrm/.next/dev/cache/turbopack/600cd2fed/00003285.sst
+    4: No such file or directory (os error 2)
