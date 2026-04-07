@@ -58,6 +58,8 @@ export default function EmployeeDashboard() {
   const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showSalaryModal, setShowSalaryModal] = useState(false);
+  const [aiFeedback, setAiFeedback] = useState('');
+  const [feedbackLoading, setFeedbackLoading] = useState(true);
 
   useEffect(() => {
     if (!session) return;
@@ -70,13 +72,15 @@ export default function EmployeeDashboard() {
       fetch('/api/employees').then(r => r.ok ? r.json() : []),
       fetch('/api/employee-plans').then(r => r.ok ? r.json() : []),
       fetch('/api/funnel').then(r => r.ok ? r.json() : []),
-    ]).then(([k, a, p, b, rep, emps, plans, f]) => {
+      fetch('/api/employee/feedback').then(r => r.ok ? r.json() : {}),
+    ]).then(([k, a, p, b, rep, emps, plans, f, feedbackData]) => {
       setKpis(Array.isArray(k) ? k : []); 
       setAttendance(Array.isArray(a) ? a : []); 
       setPenalties(Array.isArray(p) ? p : []); 
       setBonuses(Array.isArray(b) ? b : []); 
       setReports(Array.isArray(rep) ? rep : []); 
       setFunnel(Array.isArray(f) ? f : []);
+      setAiFeedback(feedbackData?.feedback || '');
 
       const safeEmps = Array.isArray(emps) ? emps : [];
       const me = safeEmps.find(e => e.email === session?.user?.email) || safeEmps[0];
@@ -86,9 +90,11 @@ export default function EmployeeDashboard() {
       setPlan(safePlans[0] || null);
       
       setLoading(false);
+      setFeedbackLoading(false);
     }).catch(err => {
       console.error('Dashboard fetch error:', err);
       setLoading(false);
+      setFeedbackLoading(false);
     });
   }, [session]);
 
@@ -204,6 +210,24 @@ export default function EmployeeDashboard() {
               <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{aiTip}</div>
             </div>
           </div>
+
+          {aiFeedback && (
+            <div style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-elevated))', border: '1px solid var(--border)', borderRadius: '16px', padding: '20px 24px', marginBottom: '24px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'linear-gradient(90deg, var(--primary-500), #10b981, #f59e0b)' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                <div style={{ width: 36, height: 36, borderRadius: '10px', background: 'linear-gradient(135deg, var(--primary-500), var(--primary-600))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>💬</div>
+                <div>
+                  <div style={{ fontSize: '11px', fontWeight: 900, color: 'var(--primary-400)', textTransform: 'uppercase', letterSpacing: '1px' }}>AI Kundalik Feedback</div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>Shaxsiy motivatsion xabar</div>
+                </div>
+              </div>
+              {feedbackLoading ? (
+                <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontStyle: 'italic' }}>AI fikr-mulohaza tayyorlanmoqda...</div>
+              ) : (
+                <div style={{ fontSize: '14px', lineHeight: '1.7', color: 'var(--text-primary)', fontWeight: 500, whiteSpace: 'pre-wrap' }}>{aiFeedback}</div>
+              )}
+            </div>
+          )}
 
           <div style={{ background: latenessState === 'PENALTY' ? 'rgba(239, 68, 68, 0.06)' : latenessState === 'WARNING' ? 'rgba(245, 158, 11, 0.08)' : 'rgba(16, 185, 129, 0.05)', borderLeft: `4px solid ${latenessState === 'PENALTY' ? 'var(--danger-500)' : latenessState === 'WARNING' ? 'var(--warning-500)' : 'var(--accent-teal)'}`, padding: '14px 18px', borderRadius: '12px', marginBottom: '24px', border: '1px solid var(--border)' }}>
             <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: latenessState === 'PENALTY' ? 'var(--danger-500)' : latenessState === 'WARNING' ? 'var(--warning-500)' : 'var(--accent-teal)', marginBottom: '4px' }}>
