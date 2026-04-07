@@ -202,6 +202,12 @@ export default function RatingsPage() {
                             <div style={{ fontSize: '12px', fontWeight: 800 }}>{r.totalSales}</div>
                             <div style={{ fontSize: '8px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Sotuv</div>
                           </div>
+                          <div style={{ textAlign: 'center', minWidth: '70px' }}>
+                            <div style={{ fontSize: '12px', fontWeight: 800, color: '#8b5cf6' }}>
+                              {r.revenue >= 1000000 ? (r.revenue / 1000000).toFixed(1) + 'M' : (r.revenue || 0).toLocaleString()}
+                            </div>
+                            <div style={{ fontSize: '8px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Aylanma</div>
+                          </div>
                           <div style={{ textAlign: 'center', minWidth: '40px' }}>
                             <div style={{ fontSize: '12px', fontWeight: 800 }}>{r.totalCalls}</div>
                             <div style={{ fontSize: '8px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Aloqa</div>

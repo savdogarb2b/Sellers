@@ -39,3 +39,8 @@
  GET /api/auth/session 200 in 33ms (next.js: 24ms, application-code: 9ms)
  GET /api/auth/session 200 in 67ms (next.js: 29ms, application-code: 38ms)
  GET /api/auth/session 200 in 12ms (next.js: 4ms, application-code: 8ms)
+Persisting failed: Unable to write SST file 00005452.sst
+
+Caused by:
+    No such file or directory (os error 2)
+Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)

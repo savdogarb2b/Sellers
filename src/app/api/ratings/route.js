@@ -36,19 +36,27 @@ export async function GET(request) {
     const periodPenaltiesRecs = emp.penaltyRecords.filter(r => isSelectedPeriod(r.date));
     const periodBonusesRecs = emp.bonusRecords.filter(r => isSelectedPeriod(r.date));
 
-    const totalSales = periodReports.reduce((sum, r) => sum + r.qualityLeads, 0);
-    const totalCalls = periodReports.reduce((sum, r) => sum + r.totalCalls, 0);
+    const totalSales = periodReports.reduce((sum, r) => sum + (r.sales || 0), 0);
+    const revenue = periodReports.reduce((sum, r) => sum + (r.revenue || 0), 0);
+    const totalCalls = periodReports.reduce((sum, r) => sum + (r.totalCalls || 0), 0);
+    
+    // Konversiya: (Sotuv / Gaplashilgan mijozlar) * 100
     const conversion = totalCalls > 0 ? (totalSales / totalCalls * 100) : 0;
+    
     const totalPenalties = periodPenaltiesRecs.reduce((sum, r) => sum + r.amount, 0);
     const totalBonuses = periodBonusesRecs.reduce((sum, r) => sum + r.amount, 0);
 
-    // Score: sales * 10 + conversion * 2 + bonuses/10000 - penalties/10000
-    const score = totalSales * 10 + conversion * 2 + totalBonuses / 10000 - totalPenalties / 10000;
+    // Reyting bali: (Sotuv x 100) + (Aylanma millionda x 10) + (Gaplashilgan mijoz x 1)
+    const revenueInMillions = revenue / 1000000;
+    const baseScore = (totalSales * 100) + (revenueInMillions * 10) + (totalCalls * 1);
+    const financialScore = (totalBonuses / 100000) - (totalPenalties / 100000);
+    const score = Math.max(0, baseScore + financialScore);
 
     return {
       id: emp.id,
       name: emp.name,
       totalSales,
+      revenue,
       totalCalls,
       conversion: Math.round(conversion * 10) / 10,
       totalPenalties,
