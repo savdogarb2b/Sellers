@@ -71,10 +71,12 @@ Sizning vazifangiz boshqaruvchilarga KPI va moliyaviy ma'lumotlarni tahlil qilis
   const stream = new ReadableStream({
     async start(controller) {
       let fullText = '';
+      let isClosed = false;
       try {
         const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+          signal: request.signal,
           body: JSON.stringify({
             model: 'deepseek-chat',
             messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: message }],
@@ -83,7 +85,7 @@ Sizning vazifangiz boshqaruvchilarga KPI va moliyaviy ma'lumotlarni tahlil qilis
           })
         });
 
-        if (!response.ok) throw new Error('DeepSeek API error');
+        if (!response.ok) throw new Error(`DeepSeek API error: ${response.status}`);
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder('utf-8');
@@ -95,7 +97,7 @@ Sizning vazifangiz boshqaruvchilarga KPI va moliyaviy ma'lumotlarni tahlil qilis
           buffer += decoder.decode(value, { stream: true });
           
           const lines = buffer.split('\n');
-          buffer = lines.pop() || ''; // saqlab qolamiz agar to'liq tugallanmagan bo'lsa
+          buffer = lines.pop() || ''; 
           
           for (const line of lines) {
             if (line.startsWith('data: ') && line.trim() !== 'data: [DONE]') {
@@ -104,7 +106,7 @@ Sizning vazifangiz boshqaruvchilarga KPI va moliyaviy ma'lumotlarni tahlil qilis
                 const content = data.choices[0]?.delta?.content || '';
                 if (content) { 
                   fullText += content; 
-                  controller.enqueue(encoder.encode(content)); 
+                  if (!isClosed) controller.enqueue(encoder.encode(content)); 
                 }
               } catch (e) {
                 // Ignore incomplete JSON
@@ -117,15 +119,29 @@ Sizning vazifangiz boshqaruvchilarga KPI va moliyaviy ma'lumotlarni tahlil qilis
           try {
              const data = JSON.parse(buffer.slice(6));
              const content = data.choices[0]?.delta?.content || '';
-             if (content) { fullText += content; controller.enqueue(encoder.encode(content)); }
+             if (content) { 
+               fullText += content; 
+               if (!isClosed) controller.enqueue(encoder.encode(content)); 
+             }
           } catch(e) {}
         }
         
-        controller.close();
+        if (!isClosed) {
+          controller.close();
+          isClosed = true;
+        }
       } catch (error) {
-        console.error('Streaming error:', error);
-        controller.enqueue(encoder.encode('\n\n[Ma\'lumot uzib qo\'yildi]'));
-        controller.close();
+        if (!isClosed) {
+          try {
+            if (error.name !== 'AbortError' && !error.message?.includes('terminated') && !error.message?.includes('ECONNRESET')) {
+               controller.enqueue(encoder.encode('\n\n[Ma\'lumot uzildi yoki xatolik yuz berdi]'));
+            }
+          } catch(e) {}
+          try {
+            controller.close();
+          } catch(e) {}
+          isClosed = true;
+        }
       } finally {
         if (fullText) {
           try { 
@@ -143,7 +159,11 @@ Sizning vazifangiz boshqaruvchilarga KPI va moliyaviy ma'lumotlarni tahlil qilis
   });
 
   return new Response(stream, {
-    headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache' }
+    headers: { 
+      'Content-Type': 'text/plain; charset=utf-8', 
+      'Cache-Control': 'no-cache, no-transform',
+      'X-Content-Type-Options': 'nosniff'
+    }
   });
 }
 

@@ -153,3 +153,32 @@ Caused by:
     2: Unable to open static sorted file 00003285.sst
     3: Failed to open SST file /Users/shonazarxudayberganov/Documents/Новая папка/salescrm/.next/dev/cache/turbopack/600cd2fed/00003285.sst
     4: No such file or directory (os error 2)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+
+thread 'tokio-runtime-worker' (670268) panicked at turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:196:17:
+Failed to restore task data (corrupted database or bug): Data for TaskId 247887)
+
+Caused by:
+    0: Looking up task storage for TaskId 247887 from database failed
+    1: Unable to open static sorted file referenced from 00005420.meta
+    2: Unable to open static sorted file 00005419.sst
+    3: Failed to open SST file /Users/shonazarxudayberganov/Documents/Новая папка/salescrm/.next/dev/cache/turbopack/600cd2fed/00005419.sst
+    4: No such file or directory (os error 2)
+
+thread 'tokio-runtime-worker' (669133) panicked at turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:224:17:
+Failed to restore task data (corrupted database or bug): Data for batch of 3 tasks
+
+Caused by:
+    0: Looking up typed data for 3 tasks from database failed
+    1: Unable to open static sorted file referenced from 00005420.meta
+    2: Unable to open static sorted file 00005418.sst
+    3: Failed to open SST file /Users/shonazarxudayberganov/Documents/Новая папка/salescrm/.next/dev/cache/turbopack/600cd2fed/00005418.sst
+    4: No such file or directory (os error 2)
+○ Compiling /api/chat ...
+Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
