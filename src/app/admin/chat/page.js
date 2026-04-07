@@ -127,6 +127,10 @@ export default function AdminChatPage() {
     if (!element) return;
     
     try {
+      const html2canvasModule = await import('html2canvas');
+      const html2canvas = html2canvasModule.default;
+      const { jsPDF } = await import('jspdf');
+
       const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#111827' });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
