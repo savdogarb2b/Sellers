@@ -44,3 +44,91 @@ Persisting failed: Unable to write SST file 00005452.sst
 Caused by:
     No such file or directory (os error 2)
 Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+
+thread 'tokio-runtime-worker' (669133) panicked at turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:224:17:
+Failed to restore task data (corrupted database or bug): Data for batch of 4 tasks
+
+Caused by:
+    0: Looking up typed data for 4 tasks from database failed
+    1: Unable to open static sorted file referenced from 00005451.meta
+    2: Unable to open static sorted file 00005446.sst
+    3: Failed to open SST file /Users/shonazarxudayberganov/Documents/Новая папка/salescrm/.next/dev/cache/turbopack/600cd2fed/00005446.sst
+    4: No such file or directory (os error 2)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'tokio-runtime-worker' (669133) panicked at turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:196:17:
+Failed to restore task data (corrupted database or bug): Data for TaskId 243273)
+
+Caused by:
+    0: Looking up task storage for TaskId 243273 from database failed
+    1: Unable to open static sorted file referenced from 00005420.meta
+    2: Unable to open static sorted file 00005417.sst
+    3: Failed to open SST file /Users/shonazarxudayberganov/Documents/Новая папка/salescrm/.next/dev/cache/turbopack/600cd2fed/00005417.sst
+    4: No such file or directory (os error 2)
+
+thread 'tokio-runtime-worker' (669133) panicked at turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:224:17:
+Failed to restore task data (corrupted database or bug): Data for batch of 251 tasks
+
+Caused by:
+    0: Looking up typed data for 251 tasks from database failed
+    1: Unable to open static sorted file referenced from 00005451.meta
+    2: Unable to open static sorted file 00005446.sst
+    3: Failed to open SST file /Users/shonazarxudayberganov/Documents/Новая папка/salescrm/.next/dev/cache/turbopack/600cd2fed/00005446.sst
+    4: No such file or directory (os error 2)
+
+thread 'tokio-runtime-worker' (669133) panicked at turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:224:17:
+Failed to restore task data (corrupted database or bug): Data for batch of 251 tasks
+
+Caused by:
+    0: Looking up typed data for 251 tasks from database failed
+    1: Unable to open static sorted file referenced from 00005451.meta
+    2: Unable to open static sorted file 00005446.sst
+    3: Failed to open SST file /Users/shonazarxudayberganov/Documents/Новая папка/salescrm/.next/dev/cache/turbopack/600cd2fed/00005446.sst
+    4: No such file or directory (os error 2)
+
+thread 'tokio-runtime-worker' (669133) panicked at turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:224:17:
+Failed to restore task data (corrupted database or bug): Data for batch of 2 tasks
+
+Caused by:
+    0: Looking up typed data for 2 tasks from database failed
+    1: Unable to open static sorted file referenced from 00005420.meta
+    2: Unable to open static sorted file 00005417.sst
+    3: Failed to open SST file /Users/shonazarxudayberganov/Documents/Новая папка/salescrm/.next/dev/cache/turbopack/600cd2fed/00005417.sst
+    4: No such file or directory (os error 2)
+
+thread 'tokio-runtime-worker' (669133) panicked at turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:224:17:
+Failed to restore task data (corrupted database or bug): Data for batch of 75 tasks
+
+Caused by:
+    0: Looking up typed data for 75 tasks from database failed
+    1: Unable to open static sorted file referenced from 00005420.meta
+    2: Unable to open static sorted file 00005419.sst
+    3: Failed to open SST file /Users/shonazarxudayberganov/Documents/Новая папка/salescrm/.next/dev/cache/turbopack/600cd2fed/00005419.sst
+    4: No such file or directory (os error 2)
+
+thread 'tokio-runtime-worker' (669133) panicked at turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:224:17:
+Failed to restore task data (corrupted database or bug): Data for batch of 6 tasks
+
+Caused by:
+    0: Looking up typed data for 6 tasks from database failed
+    1: Unable to open static sorted file referenced from 00005420.meta
+    2: Unable to open static sorted file 00005419.sst
+    3: Failed to open SST file /Users/shonazarxudayberganov/Documents/Новая папка/salescrm/.next/dev/cache/turbopack/600cd2fed/00005419.sst
+    4: No such file or directory (os error 2)
+
+thread 'tokio-runtime-worker' (669133) panicked at turbopack/crates/turbo-tasks-backend/src/backend/operation/mod.rs:196:17:
+Failed to restore task data (corrupted database or bug): Data for TaskId 230517)
+
+Caused by:
+    0: Looking up task storage for TaskId 230517 from database failed
+    1: Unable to open static sorted file referenced from 00005420.meta
+    2: Unable to open static sorted file 00005417.sst
+    3: Failed to open SST file /Users/shonazarxudayberganov/Documents/Новая папка/salescrm/.next/dev/cache/turbopack/600cd2fed/00005417.sst
+    4: No such file or directory (os error 2)
+Persisting failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)
+Compaction failed: Another write batch or compaction is already active (Only a single write operations is allowed at a time)

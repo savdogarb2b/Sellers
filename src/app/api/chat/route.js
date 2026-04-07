@@ -3,6 +3,8 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -48,12 +50,28 @@ export async function POST(request) {
 
 
 
-  const systemPrompt = "Sen SalesCRM yordamchisiz. O'zbek tilida, markdown formatida javob ber.";
+  const systemPrompt = `Sen 'Executive AI' - SalesCRM tahlilchisisan. O'zbek tilida, markdown formatida qisqa va chiroyli javob ber.
+Agar foydalanuvchi statistika, graf yoki chart so'rasa, albatta uni quyidagi formatda JSON kod blokida qaytar, chunki tizim uni chiroyli dashboard qilib chizadi.
+
+\`\`\`chart
+{
+  "type": "bar", // yoki "line", "pie"
+  "title": "Sotuvlar Statistikasi",
+  "data": {
+    "labels": ["Yanvar", "Fevral", "Mart"],
+    "datasets": [
+      { "label": "Sotuv", "data": [12, 19, 3] },
+      { "label": "Lidlar", "data": [20, 30, 10] }
+    ]
+  }
+}
+\`\`\`
+Sizning vazifangiz boshqaruvchilarga KPI va moliyaviy ma'lumotlarni tahlil qilish.`;
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
+      let fullText = '';
       try {
-        let fullText = '';
         const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
@@ -68,21 +86,41 @@ export async function POST(request) {
         if (!response.ok) throw new Error('DeepSeek API error');
 
         const reader = response.body.getReader();
-        const decoder = new TextDecoder();
+        const decoder = new TextDecoder('utf-8');
+        let buffer = '';
+
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          const chunk = decoder.decode(value);
-          for (const line of chunk.split('\n')) {
+          buffer += decoder.decode(value, { stream: true });
+          
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // saqlab qolamiz agar to'liq tugallanmagan bo'lsa
+          
+          for (const line of lines) {
             if (line.startsWith('data: ') && line.trim() !== 'data: [DONE]') {
               try {
                 const data = JSON.parse(line.slice(6));
                 const content = data.choices[0]?.delta?.content || '';
-                if (content) { fullText += content; controller.enqueue(encoder.encode(content)); }
-              } catch (e) {}
+                if (content) { 
+                  fullText += content; 
+                  controller.enqueue(encoder.encode(content)); 
+                }
+              } catch (e) {
+                // Ignore incomplete JSON
+              }
             }
           }
         }
+        
+        if (buffer.startsWith('data: ') && buffer.trim() !== 'data: [DONE]') {
+          try {
+             const data = JSON.parse(buffer.slice(6));
+             const content = data.choices[0]?.delta?.content || '';
+             if (content) { fullText += content; controller.enqueue(encoder.encode(content)); }
+          } catch(e) {}
+        }
+        
         controller.close();
       } catch (error) {
         console.error('Streaming error:', error);
