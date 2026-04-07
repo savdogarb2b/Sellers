@@ -59,7 +59,7 @@ export async function GET(request) {
     if (user.attendances && user.attendances.length > 0) {
       const a = user.attendances[0];
       attendanceText += `So'nggi davomat (${new Date(a.date).toLocaleDateString('uz-UZ')}): \n`;
-      attendanceText += `- Holati: ${a.status}\n`;
+      attendanceText += `- Holati: ${a.isLate ? 'Kechikkan' : 'Vaqtida kelgan'}\n`;
       if (a.isLate) attendanceText += `- Diqqat: Xodim ishga kech qolgan!\n`;
     }
 
