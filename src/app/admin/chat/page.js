@@ -9,7 +9,7 @@ import {
   BarChart, Bar, LineChart, Line, PieChart, Pie,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
-import { Send, Trash2, Bot, Sparkles, Zap, TrendingUp } from 'lucide-react';
+import { Send, Trash2, Bot, Sparkles, Zap, TrendingUp, Download } from 'lucide-react';
 
 export default function AdminChatPage() {
   const [messages, setMessages] = useState([]);

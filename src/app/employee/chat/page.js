@@ -5,7 +5,7 @@ import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Bot, Sparkles, Zap, ShieldAlert, TrendingUp, Send, Trash2 } from 'lucide-react';
+import { Bot, Sparkles, Zap, ShieldAlert, TrendingUp, Send, Trash2, Download } from 'lucide-react';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
