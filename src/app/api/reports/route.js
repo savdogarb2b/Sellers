@@ -8,6 +8,8 @@ export async function GET(request) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
+  const startDateStr = searchParams.get('startDate');
+  const endDateStr = searchParams.get('endDate');
 
   let where = {};
   if (session.user.role === 'ADMIN') {
@@ -17,6 +19,18 @@ export async function GET(request) {
     // Employee: only their own
     const userId = searchParams.get('userId') || session.user.id;
     where = { userId };
+  }
+
+  if (startDateStr && endDateStr) {
+    const start = new Date(startDateStr);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDateStr);
+    end.setHours(23, 59, 59, 999);
+    
+    where.date = {
+      gte: start,
+      lte: end,
+    };
   }
 
   const reports = await prisma.dailyReport.findMany({
