@@ -7,7 +7,7 @@ export default function ReportPage() {
   const [stages, setStages] = useState([]);
   const [reports, setReports] = useState([]);
   const [yesterdayReport, setYesterdayReport] = useState(null);
-  const [form, setForm] = useState({ incomingCalls: '', outgoingCalls: '', sales: '', revenue: '' });
+  const [form, setForm] = useState({ incomingCalls: '', outgoingCalls: '', qualityLeads: '', nonQualityLeads: '', officeVisits: '', sales: '', revenue: '' });
   const [leadStatuses, setLeadStatuses] = useState([]);
   const [tab, setTab] = useState('form');
   const [success, setSuccess] = useState(false);
@@ -43,7 +43,7 @@ export default function ReportPage() {
     });
     setSuccess(true);
     setTimeout(() => setSuccess(false), 4000);
-    setForm({ incomingCalls: '', outgoingCalls: '', sales: '', revenue: '' });
+    setForm({ incomingCalls: '', outgoingCalls: '', qualityLeads: '', nonQualityLeads: '', officeVisits: '', sales: '', revenue: '' });
     setLeadStatuses(stages.map(st => ({ stageId: st.id, count: '' })));
     const r = await fetch('/api/reports'); const reps = await r.json(); setReports(reps);
 
@@ -89,16 +89,30 @@ export default function ReportPage() {
                     <div className="form-row">
                       <div className="form-group">
                         <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Kiruvchi qo'ng'iroqlar</label>
-                        <input className="form-input" type="number" value={form.incomingCalls} onChange={e => setForm({...form, incomingCalls: e.target.value})} placeholder="0" min="0" />
+                        <input className="form-input" type="number" value={form.incomingCalls} onChange={e => setForm({...form, incomingCalls: e.target.value})} placeholder="0" min="0" required />
                       </div>
                       <div className="form-group">
                         <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Chiquvchi qo'ng'iroqlar</label>
-                        <input className="form-input" type="number" value={form.outgoingCalls} onChange={e => setForm({...form, outgoingCalls: e.target.value})} placeholder="0" min="0" />
+                        <input className="form-input" type="number" value={form.outgoingCalls} onChange={e => setForm({...form, outgoingCalls: e.target.value})} placeholder="0" min="0" required />
                       </div>
                     </div>
                     <div style={{ background: 'rgba(124,58,237,0.05)', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(124,58,237,0.1)', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Jami qo'ng'iroqlar</span>
                       <span style={{ color: 'var(--primary-400)', fontSize: '18px', fontWeight: 950 }}>{totalCalls}</span>
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Sifatli lidlar</label>
+                        <input className="form-input" type="number" value={form.qualityLeads} onChange={e => setForm({...form, qualityLeads: e.target.value})} placeholder="0" min="0" required />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Sifatsiz lidlar</label>
+                        <input className="form-input" type="number" value={form.nonQualityLeads} onChange={e => setForm({...form, nonQualityLeads: e.target.value})} placeholder="0" min="0" required />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Ofisga kelganlar (Uchrashuv)</label>
+                      <input className="form-input" type="number" value={form.officeVisits} onChange={e => setForm({...form, officeVisits: e.target.value})} placeholder="0" min="0" required />
                     </div>
                     {stages.length > 0 && (
                       <div style={{ background: 'var(--bg-card-hover)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
@@ -109,7 +123,7 @@ export default function ReportPage() {
                           {stages.map((s, i) => (
                             <div className="form-group" key={s.id} style={{ marginBottom: 0 }}>
                               <label className="form-label" style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase' }}>{s.name}</label>
-                              <input className="form-input" type="number" value={leadStatuses[i]?.count || ''} onChange={e => updateLeadStatus(i, e.target.value)} placeholder="0" min="0" />
+                              <input className="form-input" type="number" value={leadStatuses[i]?.count || ''} onChange={e => updateLeadStatus(i, e.target.value)} placeholder="0" min="0" required />
                             </div>
                           ))}
                         </div>
@@ -119,11 +133,11 @@ export default function ReportPage() {
                     <div className="form-row" style={{ alignItems: 'flex-end' }}>
                       <div className="form-group" style={{ marginBottom: 0 }}>
                         <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', minHeight: '28px' }}>Sotib olganlar (Sotuv soni)</label>
-                        <input className="form-input" type="number" value={form.sales} onChange={e => setForm({...form, sales: e.target.value})} placeholder="0" min="0" />
+                        <input className="form-input" type="number" value={form.sales} onChange={e => setForm({...form, sales: e.target.value})} placeholder="0" min="0" required />
                       </div>
                       <div className="form-group" style={{ marginBottom: 0 }}>
                         <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', minHeight: '28px' }}>Sotuvdan umumiy summa (UZS)</label>
-                        <input className="form-input" type="number" value={form.revenue} onChange={e => setForm({...form, revenue: e.target.value})} placeholder="0" min="0" />
+                        <input className="form-input" type="number" value={form.revenue} onChange={e => setForm({...form, revenue: e.target.value})} placeholder="0" min="0" required />
                       </div>
                     </div>
                     <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '24px', fontSize: '11px', padding: '14px' }}>

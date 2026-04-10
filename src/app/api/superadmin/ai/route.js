@@ -59,40 +59,32 @@ export async function POST(request) {
 
   // Test mode: just check if API key works, don't save to DB
   if (test) {
-    const encoder = new TextEncoder();
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-            body: JSON.stringify({
-              model: 'deepseek-chat',
-              messages: [{ role: 'user', content: 'hi' }],
-              stream: true,
-              max_tokens: 5
-            })
-          });
-          if (!response.ok) throw new Error('API error');
-          controller.enqueue(encoder.encode('ok'));
-          controller.close();
-        } catch {
-          controller.error(new Error('failed'));
-        }
+    try {
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [{ role: 'user', content: 'hi' }],
+          stream: false,
+          max_tokens: 5
+        })
+      });
+      if (!response.ok) {
+        return NextResponse.json({ success: false, error: 'API kalit ishlamayapti' }, { status: 400 });
       }
-    });
-    return new Response(stream, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
-  }
-
-  if (!test) {
-    await prisma.chatMessage.create({ data: { userId, role: 'user', content: message } });
+      return NextResponse.json({ success: true, message: 'API kalit ishlayapti' });
+    } catch {
+      return NextResponse.json({ success: false, error: 'API ga ulanib bo\'lmadi' }, { status: 500 });
+    }
   }
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
+      let fullText = '';
+      let isClosed = false;
       try {
-        let fullText = '';
         const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
@@ -103,37 +95,44 @@ export async function POST(request) {
           })
         });
 
+        if (!response.ok) throw new Error(`DeepSeek API xato: ${response.status}`);
+
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
+        let buffer = '';
+
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
           for (const line of lines) {
             if (line.startsWith('data: ') && line.trim() !== 'data: [DONE]') {
               try {
                 const data = JSON.parse(line.slice(6));
                 const content = data.choices[0]?.delta?.content || '';
-                if (content) { fullText += content; controller.enqueue(encoder.encode(content)); }
-              } catch (e) {}
+                if (content) { fullText += content; if (!isClosed) controller.enqueue(encoder.encode(content)); }
+              } catch (_parseErr) { /* incomplete JSON chunk */ }
             }
           }
         }
-        controller.close();
+        if (!isClosed) { controller.close(); isClosed = true; }
       } catch (err) {
-        controller.error(err);
+        if (!isClosed) {
+          try { controller.enqueue(encoder.encode('\n\n[Xatolik yuz berdi]')); } catch(_e) {}
+          try { controller.close(); } catch(_e) {}
+          isClosed = true;
+        }
       } finally {
         if (fullText) {
-          try { 
-            if (sessionId) {
-              await prisma.chatMessage.create({ data: { userId, role: 'user', content: message, sessionId } });
-              await prisma.chatMessage.create({ data: { userId, role: 'assistant', content: fullText, sessionId } }); 
-            } else {
-              await prisma.chatMessage.create({ data: { userId, role: 'user', content: message } });
-              await prisma.chatMessage.create({ data: { userId, role: 'assistant', content: fullText } }); 
-            }
-          } catch(e) {}
+          try {
+            await prisma.chatMessage.create({ data: { userId, role: 'user', content: message, sessionId: sessionId || undefined } });
+            await prisma.chatMessage.create({ data: { userId, role: 'assistant', content: fullText, sessionId: sessionId || undefined } });
+          } catch(dbErr) {
+            console.error('Chat message saqlashda xatolik:', dbErr.message);
+          }
         }
       }
     }

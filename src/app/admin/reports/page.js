@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar';
 
 export default function AdminReportsPage() {
   const [reports, setReports] = useState([]);
+  const [stages, setStages] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Date filters
@@ -12,6 +13,9 @@ export default function AdminReportsPage() {
   const [customDateStart, setCustomDateStart] = useState('');
   const [customDateEnd, setCustomDateEnd] = useState('');
   const [useCustomRange, setUseCustomRange] = useState(false);
+
+  // Edit state
+  const [editingReport, setEditingReport] = useState(null);
 
   const fetchReports = async () => {
     setLoading(true);
@@ -59,6 +63,10 @@ export default function AdminReportsPage() {
   };
 
   useEffect(() => {
+    fetch('/api/funnel').then(r => r.json()).then(setStages);
+  }, []);
+
+  useEffect(() => {
     fetchReports();
   }, [period, useCustomRange]);
 
@@ -69,6 +77,39 @@ export default function AdminReportsPage() {
   }, [customDateStart, customDateEnd]);
 
   const formatCurrency = (num) => new Intl.NumberFormat('uz-UZ').format(num || 0);
+
+  const handleEditClick = (report) => {
+    setEditingReport({
+      ...report,
+      leadStatuses: stages.map(st => {
+        const existing = report.leadStatuses?.find(ls => ls.stageId === st.id);
+        return { stageId: st.id, count: existing ? existing.count : '', stage: st };
+      })
+    });
+  };
+
+  const handleUpdateReport = async (e) => {
+    e.preventDefault();
+    try {
+      const validStatuses = editingReport.leadStatuses.filter(ls => ls.count !== '');
+      const res = await fetch(`/api/reports/${editingReport.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...editingReport, leadStatuses: validStatuses }),
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        setReports(reports.map(r => r.id === updated.id ? updated : r));
+        setEditingReport(null);
+      } else {
+        alert("Xatolik yuz berdi");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Xatolik yuz berdi");
+    }
+  };
 
   return (
     <div className="app-layout">
@@ -181,8 +222,13 @@ export default function AdminReportsPage() {
 
                   {/* Yopilgan savdo xulosasi */}
                   <div style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px dashed var(--border-2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Yopilgan Savdo</div>
-                    <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--accent-teal)' }}>{r.sales} <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>ta</span></div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Yopilgan Savdo</div>
+                      <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--accent-teal)' }}>{r.sales} <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>ta</span></div>
+                    </div>
+                    <button onClick={() => handleEditClick(r)} className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '11px' }}>
+                      O'ZGARTIRISH
+                    </button>
                   </div>
 
                 </div>
@@ -191,6 +237,86 @@ export default function AdminReportsPage() {
           )}
         </div>
       </main>
+
+      {/* Tahrirlash Modali */}
+      {editingReport && (
+        <div style={{ position: 'fixed', inset: 0, background: 'var(--bg-overlay)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }} onClick={() => setEditingReport(null)}>
+          <div className="card glass-panel animate-in" style={{ width: '100%', maxWidth: '600px', padding: '24px', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <div>
+                <h2 style={{ fontSize: '16px', fontWeight: 900, textTransform: 'uppercase' }}>Hisobotni o'zgartirish</h2>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{editingReport.user?.name} - {new Date(editingReport.date).toLocaleDateString('uz-UZ')}</div>
+              </div>
+              <button onClick={() => setEditingReport(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
+            </div>
+
+            <form onSubmit={handleUpdateReport}>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Kiruvchi qo'ng'iroqlar</label>
+                  <input className="form-input" type="number" value={editingReport.incomingCalls} onChange={e => setEditingReport({ ...editingReport, incomingCalls: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Chiquvchi qo'ng'iroqlar</label>
+                  <input className="form-input" type="number" value={editingReport.outgoingCalls} onChange={e => setEditingReport({ ...editingReport, outgoingCalls: e.target.value })} required />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Sifatli Lidlar</label>
+                  <input className="form-input" type="number" value={editingReport.qualityLeads} onChange={e => setEditingReport({ ...editingReport, qualityLeads: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Sifatsiz Lidlar</label>
+                  <input className="form-input" type="number" value={editingReport.nonQualityLeads} onChange={e => setEditingReport({ ...editingReport, nonQualityLeads: e.target.value })} required />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Uchrashuvlar</label>
+                <input className="form-input" type="number" value={editingReport.officeVisits} onChange={e => setEditingReport({ ...editingReport, officeVisits: e.target.value })} required />
+              </div>
+
+              {stages.length > 0 && (
+                <div style={{ background: 'var(--bg-card-hover)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--primary-400)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '14px' }}>📊</span> Voronka bosqichlari
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: '12px' }}>
+                    {editingReport.leadStatuses?.map((ls, i) => (
+                      <div className="form-group" key={ls.stageId} style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase' }}>{ls.stage?.name}</label>
+                        <input className="form-input" type="number" value={ls.count} onChange={e => {
+                          const newLs = [...editingReport.leadStatuses];
+                          newLs[i].count = e.target.value;
+                          setEditingReport({ ...editingReport, leadStatuses: newLs });
+                        }} placeholder="0" min="0" required />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Sotuv soni</label>
+                  <input className="form-input" type="number" value={editingReport.sales} onChange={e => setEditingReport({ ...editingReport, sales: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Umumiy summa (UZS)</label>
+                  <input className="form-input" type="number" value={editingReport.revenue} onChange={e => setEditingReport({ ...editingReport, revenue: e.target.value })} required />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                <button type="button" onClick={() => setEditingReport(null)} className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>BEKOR QILISH</button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>SAQLASH</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

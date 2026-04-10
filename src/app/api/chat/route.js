@@ -152,7 +152,9 @@ Sizning vazifangiz boshqaruvchilarga KPI va moliyaviy ma'lumotlarni tahlil qilis
               await prisma.chatMessage.create({ data: { userId, role: 'user', content: message } });
               await prisma.chatMessage.create({ data: { userId, role: 'assistant', content: fullText } }); 
             }
-          } catch(err) {}
+          } catch(dbErr) {
+            console.error('Chat xabar saqlashda xatolik:', dbErr.message);
+          }
         }
       }
     }

@@ -31,7 +31,7 @@ function WorkCountdown({ workEndTime }) {
       const hrs = Math.floor(diff / 3600000);
       const mins = Math.floor((diff % 3600000) / 60000);
       const secs = Math.floor((diff % 60000) / 1000);
-      setRemaining(`${hrs}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`);
+      setRemaining(`${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
     };
     tick();
     const iv = setInterval(tick, 1000);
@@ -74,11 +74,11 @@ export default function EmployeeDashboard() {
       fetch('/api/funnel').then(r => r.ok ? r.json() : []),
       fetch('/api/employee/feedback').then(r => r.ok ? r.json() : {}),
     ]).then(([k, a, p, b, rep, emps, plans, f, feedbackData]) => {
-      setKpis(Array.isArray(k) ? k : []); 
-      setAttendance(Array.isArray(a) ? a : []); 
-      setPenalties(Array.isArray(p) ? p : []); 
-      setBonuses(Array.isArray(b) ? b : []); 
-      setReports(Array.isArray(rep) ? rep : []); 
+      setKpis(Array.isArray(k) ? k : []);
+      setAttendance(Array.isArray(a) ? a : []);
+      setPenalties(Array.isArray(p) ? p : []);
+      setBonuses(Array.isArray(b) ? b : []);
+      setReports(Array.isArray(rep) ? rep : []);
       setFunnel(Array.isArray(f) ? f : []);
       setAiFeedback(feedbackData?.feedback || '');
 
@@ -88,7 +88,7 @@ export default function EmployeeDashboard() {
 
       const safePlans = Array.isArray(plans) ? plans : [];
       setPlan(safePlans[0] || null);
-      
+
       setLoading(false);
       setFeedbackLoading(false);
     }).catch(err => {
@@ -100,8 +100,18 @@ export default function EmployeeDashboard() {
 
   if (loading) return <div className="app-layout"><Sidebar /><Navbar /><main className="main-content"><div className="loading-container"><div className="loading-spinner" /></div></main></div>;
 
-  const totalPenalties = penalties.reduce((s, r) => s + (r.amount || 0), 0);
-  const totalBonuses = bonuses.reduce((s, r) => s + (r.amount || 0), 0);
+  const isCurrentMonth = (dateString) => {
+    const dt = new Date(dateString);
+    const now = new Date();
+    return dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear();
+  };
+
+  const totalPenalties = penalties.filter(p => isCurrentMonth(p.date)).reduce((s, r) => s + (r.amount || 0), 0);
+  const totalBonuses = bonuses.filter(b => isCurrentMonth(b.date)).reduce((s, r) => s + (r.amount || 0), 0);
+  const kpiBonus = kpis.reduce((sum, k) => {
+    const pct = k.targetValue > 0 ? (k.currentValue || 0) / k.targetValue : 0;
+    return sum + (pct >= 1 ? 300000 : pct >= 0.8 ? 150000 : 0);
+  }, 0);
   const todayAttendance = attendance.find(a => new Date(a.date).toDateString() === new Date().toDateString());
   const lateCount = attendance.filter(a => a.isLate).length;
   const latenessState = userData?.latenessState || (lateCount === 0 ? 'NORMAL' : lateCount < 3 ? 'WARNING' : 'PENALTY');
@@ -114,7 +124,7 @@ export default function EmployeeDashboard() {
   const hasReportToday = !!todayReport;
 
   const fixedSalary = userData?.fixedSalary || 0;
-  const netSalary = fixedSalary + totalBonuses - totalPenalties;
+  const netSalary = fixedSalary + totalBonuses + kpiBonus - totalPenalties;
 
   const kpiAvg = kpis.length > 0
     ? Math.round(kpis.reduce((s, k) => s + (k.targetValue > 0 ? (k.currentValue || 0) / k.targetValue * 100 : 0), 0) / kpis.length)
@@ -122,18 +132,18 @@ export default function EmployeeDashboard() {
 
   const totalSales = reports.reduce((s, r) => s + (r.sales || 0), 0);
   const totalRevenue = reports.reduce((s, r) => s + (r.revenue || 0), 0);
-  const totalFunnelLeads = reports.reduce((s, r) => s + (r.leadStatuses ? r.leadStatuses.reduce((acc, ls) => acc + ls.count, 0) : 0), 0);
-  const conversion = totalFunnelLeads > 0 ? Math.round(totalSales / totalFunnelLeads * 100) : 0;
+  const totalQualityLeads = reports.reduce((s, r) => s + (r.qualityLeads || 0), 0);
+  const conversion = totalQualityLeads > 0 ? Math.round(totalSales / totalQualityLeads * 100) : 0;
   const avgCheck = totalSales > 0 ? Math.round(totalRevenue / totalSales) : 0;
-  
+
   const currentMonthSales = reports.filter(r => new Date(r.date).getMonth() === new Date().getMonth()).reduce((s, r) => s + (r.sales || 0), 0);
   const planProgress = plan && plan.targetSales > 0 ? Math.round(currentMonthSales / plan.targetSales * 100) : 0;
 
   // Streak Calculation
   let streak = 0;
-  const sortedReports = [...reports].sort((a,b) => new Date(b.date) - new Date(a.date));
-  let currentDate = new Date(); currentDate.setHours(0,0,0,0);
-  for (let i=0; i<30; i++) {
+  const sortedReports = [...reports].sort((a, b) => new Date(b.date) - new Date(a.date));
+  let currentDate = new Date(); currentDate.setHours(0, 0, 0, 0);
+  for (let i = 0; i < 30; i++) {
     const d = new Date(currentDate); d.setDate(d.getDate() - i);
     const dayStr = d.toDateString();
     const rep = sortedReports.find(r => new Date(r.date).toDateString() === dayStr);
@@ -143,12 +153,19 @@ export default function EmployeeDashboard() {
   }
 
   // 14 day Activity Array
-  const last14Days = Array.from({length: 14}, (_, i) => {
+  const last14Days = Array.from({ length: 14 }, (_, i) => {
     const d = new Date(); d.setDate(d.getDate() - (13 - i));
     const rep = reports.find(r => new Date(r.date).toDateString() === d.toDateString());
-    return { date: d, calls: rep ? (rep.totalCalls || 0) : 0, sales: rep ? (rep.sales || 0) : 0 };
+    return { 
+      date: d, 
+      calls: rep ? (rep.totalCalls || 0) : 0, 
+      sales: rep ? (rep.sales || 0) : 0,
+      qualityLeads: rep ? (rep.qualityLeads || 0) : 0,
+      officeVisits: rep ? (rep.officeVisits || 0) : 0,
+      revenue: rep ? (rep.revenue || 0) : 0
+    };
   });
-  const maxActivity = Math.max(...last14Days.map(d => Math.max(d.calls, d.sales)), 1);
+  const maxActivity = Math.max(...last14Days.map(d => Math.max(d.calls, d.sales, d.qualityLeads, d.officeVisits)), 1);
 
   // Personal Funnel logic
   const personalFunnelMap = {};
@@ -165,7 +182,7 @@ export default function EmployeeDashboard() {
   // AI Tip
   let aiTip = "Yaxshi natijalar barqarorlik bo'ladi. Bugun ham tinimsiz harakat qiling!";
   if (streak >= 3) aiTip = `Siz yonmoqdasiz! Qatorasiga ${streak} kun savdo qildingiz. Olovni o'chirmang! 🔥`;
-  else if (conversion < 10 && totalFunnelLeads > 5) aiTip = "So'nggi paytlarda konversiya biroz pasaygan. Mijozlar qiziqishini orttirishga harakat qiling.";
+  else if (conversion < 10 && totalQualityLeads > 5) aiTip = "So'nggi paytlarda konversiya biroz pasaygan. Mijozlar qiziqishini orttirishga harakat qiling.";
   else if (planProgress < 50 && new Date().getDate() > 15) aiTip = "Oylik reja yarmiga yetmagan, qattiqroq ishlaymiz, siz uddalaysiz!";
 
   return (
@@ -174,7 +191,7 @@ export default function EmployeeDashboard() {
       <Navbar />
       <main className="main-content">
         <div className="animate-in">
-          
+
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
             <div>
               <h1 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.5px' }}>Salom, {(session?.user?.name || 'Xodim').split(' ')[0]}!</h1>
@@ -273,7 +290,7 @@ export default function EmployeeDashboard() {
               <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '1px' }}>Reja Progress</div>
               {plan ? (
                 <>
-                  <div style={{ fontSize: '20px', fontWeight: 800 }}>{currentMonthSales} / <span style={{color: 'var(--primary-400)'}}>{plan.targetSales}</span> ({planProgress}%)</div>
+                  <div style={{ fontSize: '20px', fontWeight: 800 }}>{currentMonthSales} / <span style={{ color: 'var(--primary-400)' }}>{plan.targetSales}</span> ({planProgress}%)</div>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Bu yilgi oylik reja</div>
                 </>
               ) : (
@@ -283,7 +300,7 @@ export default function EmployeeDashboard() {
                 </>
               )}
             </div>
-            
+
             <div className="card glass-panel" style={{ borderLeft: '4px solid var(--primary-500)', padding: '20px' }}>
               <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '1px' }}>KPI O'rtacha</div>
               <div style={{ fontSize: '20px', fontWeight: 800 }}>{kpiAvg}%</div>
@@ -295,32 +312,40 @@ export default function EmployeeDashboard() {
             <div className="card glass-panel" style={{ padding: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <div style={{ fontSize: '13px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>Faollik Dinamikasi (14 Kun)</div>
-                <div style={{ display: 'flex', gap: '16px' }}>
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                    <div style={{ width: '8px', height: '8px', background: 'var(--border-2)', borderRadius: '2px' }}/> 
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                    <div style={{ width: '8px', height: '8px', background: 'var(--border-2)', borderRadius: '2px' }} />
                     <span style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Qo'ng'iroq</span>
                   </div>
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                    <div style={{ width: '8px', height: '8px', background: 'var(--accent-teal)', borderRadius: '2px' }}/> 
+                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                    <div style={{ width: '8px', height: '8px', background: 'var(--accent-blue)', borderRadius: '2px' }} />
+                    <span style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Sifatli Lid</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                    <div style={{ width: '8px', height: '8px', background: 'var(--accent-teal)', borderRadius: '2px' }} />
                     <span style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Sotuv</span>
                   </div>
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '180px', padding: '10px 0' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '220px', padding: '10px 0' }}>
                 {last14Days.map((d, i) => {
                   const pCalls = maxActivity > 0 ? (d.calls / maxActivity) * 100 : 0;
+                  const pLeads = maxActivity > 0 ? (d.qualityLeads / maxActivity) * 100 : 0;
                   const pSales = maxActivity > 0 ? (d.sales / maxActivity) * 100 : 0;
                   return (
-                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                      <div style={{ display: 'flex', gap: '2px', alignItems: 'flex-end', height: '120px', width: '100%', justifyContent: 'center' }}>
-                        <div style={{ height: `${pCalls}%`, width: '8px', background: 'var(--border-2)', borderRadius: '4px 4px 0 0', position: 'relative' }} title={`Qo'ng'iroqlar: ${d.calls}`}>
-                          <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', fontSize: '8px', color: 'var(--text-muted)', marginBottom: '4px' }}>{d.calls}</div>
+                    <div key={i} className="hover-glow" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '10px 2px', borderRadius: '8px', transition: 'background 0.2s', cursor: 'pointer', background: i === last14Days.length - 1 ? 'rgba(16, 185, 129, 0.05)' : 'transparent' }} title={`Sana: ${d.date.toLocaleDateString('uz-UZ')}\nQo'ng'iroqlar: ${d.calls}\nSifatli Lid: ${d.qualityLeads}\nUchrashuv: ${d.officeVisits}\nSotuvlar: ${d.sales}\nTushum: ${d.revenue.toLocaleString()} so'm`}>
+                      <div style={{ display: 'flex', gap: '2px', alignItems: 'flex-end', height: '140px', width: '100%', justifyContent: 'center' }}>
+                        <div style={{ height: `${Math.max(pCalls, 2)}%`, width: '10px', background: 'linear-gradient(to top, var(--bg-elevated), var(--primary-400))', borderRadius: '4px 4px 0 0', position: 'relative', transition: 'height 1s ease-out', opacity: 0.8 }}>
+                          {d.calls > 0 && <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', fontSize: '8px', fontWeight: 800, color: 'var(--primary-400)', marginBottom: '2px' }}>{d.calls}</div>}
                         </div>
-                        <div style={{ height: `${pSales}%`, width: '8px', background: 'var(--accent-teal)', borderRadius: '4px 4px 0 0', boxShadow: pSales > 0 ? '0 0 8px rgba(16,185,129,0.3)' : 'none', position: 'relative' }} title={`Sotuvlar: ${d.sales}`}>
-                          <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', fontSize: '8px', color: 'var(--text-muted)', marginBottom: '4px' }}>{d.sales}</div>
+                        <div style={{ height: `${Math.max(pLeads, 2)}%`, width: '10px', background: 'linear-gradient(to top, rgba(56, 189, 248, 0.2), var(--accent-blue))', borderRadius: '4px 4px 0 0', position: 'relative', transition: 'height 1s ease-out', opacity: 0.9 }}>
+                          {d.qualityLeads > 0 && <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', fontSize: '8px', fontWeight: 800, color: 'var(--accent-blue)', marginBottom: '2px' }}>{d.qualityLeads}</div>}
+                        </div>
+                        <div style={{ height: `${Math.max(pSales, 2)}%`, width: '10px', background: 'linear-gradient(to top, rgba(16,185,129,0.2), var(--accent-teal))', borderRadius: '4px 4px 0 0', boxShadow: pSales > 0 ? '0 0 10px rgba(16,185,129,0.4)' : 'none', position: 'relative', transition: 'height 1s ease-out' }}>
+                          {d.sales > 0 && <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', fontSize: '8px', fontWeight: 900, color: 'var(--accent-teal)', marginBottom: '2px' }}>{d.sales}</div>}
                         </div>
                       </div>
-                      <div style={{ fontSize: '8px', fontWeight: 800, color: 'var(--text-muted)', transform: 'rotate(-45deg)', marginTop: '8px' }}>{d.date.getDate()}/{d.date.getMonth()+1}</div>
+                      <div style={{ fontSize: '9px', fontWeight: i === last14Days.length - 1 ? 900 : 700, color: i === last14Days.length - 1 ? 'var(--accent-teal)' : 'var(--text-muted)', marginTop: '4px' }}>{String(d.date.getDate()).padStart(2,'0')}.{String(d.date.getMonth()+1).padStart(2,'0')}</div>
                     </div>
                   );
                 })}
@@ -363,12 +388,12 @@ export default function EmployeeDashboard() {
                 <div style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>Maosh Tarixi</div>
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Joriy oydagi operatsiyalar</div>
               </div>
-              <button 
+              <button
                 onClick={() => setShowSalaryModal(false)}
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '24px', cursor: 'pointer', outline: 'none' }}
               >×</button>
             </div>
-            
+
             <div style={{ background: 'var(--primary-ghost)', padding: '16px', borderRadius: '12px', marginBottom: '20px', textAlign: 'center', border: '1px solid var(--border-focus)' }}>
               <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>Yakuniy Miqdor</div>
               <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-1px' }}>{netSalary.toLocaleString()} UZS</div>
@@ -379,7 +404,13 @@ export default function EmployeeDashboard() {
                 <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Fikslangan oylik</span>
                 <span style={{ fontSize: '13px', fontWeight: 800 }}>{fixedSalary.toLocaleString()}</span>
               </div>
-              
+
+              <div style={{ margin: '8px 0', fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase' }}>KPI Bonusi (+{(kpiBonus).toLocaleString()})</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--emerald-glow)', borderRadius: '8px', borderLeft: '3px solid var(--emerald)' }}>
+                <span style={{ fontSize: '11px', fontWeight: 700 }}>Oylik KPI bajarilganligi uchun</span>
+                <span style={{ fontSize: '13px', fontWeight: 900, color: 'var(--accent-teal)' }}>+{kpiBonus.toLocaleString()}</span>
+              </div>
+
               <div style={{ margin: '8px 0', fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Bonuslar (+{(totalBonuses).toLocaleString()})</div>
               {bonuses.length === 0 ? <div style={{ fontSize: '11px', color: 'var(--text-ghost)', fontStyle: 'italic', paddingLeft: '8px' }}>Mavjud emas</div> : bonuses.map(b => (
                 <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--emerald-glow)', borderRadius: '8px', borderLeft: '3px solid var(--emerald)' }}>
