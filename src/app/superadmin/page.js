@@ -220,7 +220,7 @@ export default function SuperadminDashboard() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
             <StatCard icon="💰" label="Umumiy Sotuvchilar Tushumi" desc="Barcha xodimlar tushirgan pul" value={fmt(s.totalRevenue)} valueSuffix="so'm" sub={`🛒 ${fmt(s.totalSales)} ta sotuv | ${selectedDayLabel}`} accent="#ffb268" />
             <StatCard icon="🎯" label="Jami Ishlangan Lidlar" desc="Sifatli natija chiqargan kontaktlar" value={fmt(s.monthQualityLeads)} valueSuffix="ta lid" sub={`📞 ${fmt(s.monthTotalCalls)} ta qo'ng'iroqdan`} accent="#3b82f6" />
-            <StatCard icon="📈" label="Umumiy Konversiya" desc="Sifatli lid / Jami qo'ng'iroq" value={s.overallConversion || 0} valueSuffix="%" sub={`Formula: (Lid ÷ Qo'ng'iroq) × 100`} accent="#10b981" />
+            <StatCard icon="📈" label="Umumiy Konversiya" desc="Sotuv / Sifatli Lid" value={s.overallConversion || 0} valueSuffix="%" sub={`Formula: (Sotuv ÷ Lid) × 100 | Lid/Qo'ng'iroq: ${s.leadToCallRatio || 0}%`} accent="#10b981" />
             <StatCard icon="💵" label="Sof Foyda (Net Profit)" desc="Tushum minus ish haqi xarajatlari" value={fmt(f.netProfit)} valueSuffix="so'm" sub={`Maosh xarajatlari: ${f.payrollToRevenueRatio || 0}% tushumdan`} accent={f.netProfit >= 0 ? '#10b981' : '#ef4444'} />
             <StatCard icon="📞" label="Bir Qo'ng'iroqdan Tushum" desc="O'rtacha har bir qo'ng'iroqdan daromad" value={fmt(s.revenuePerCall)} valueSuffix="so'm" sub={`Jami ${fmt(s.monthTotalCalls)} ta qo'ng'iroq`} accent="#8b5cf6" />
             <StatCard icon="👤" label="Bir Xodim Boshiga Tushum" desc="Har bir sotuvchi keltirgan o'rtacha daromad" value={fmt(s.revenuePerEmployee)} valueSuffix="so'm" sub={`${g.totalEmployees || 0} xodim bo'yicha hisob`} accent="#ec4899" />
@@ -253,7 +253,7 @@ export default function SuperadminDashboard() {
                 <div style={{ fontSize: '10px', color: 'var(--text-3)', marginTop: '4px' }}>
                   {k.avgKpiCompletion >= 80 ? '🟢 Yaxshi natija' : k.avgKpiCompletion >= 50 ? "🟡 O'rtacha" : '🔴 Past natija'}
                 </div>
-                {k.bestKpiOrg && <div style={{ fontSize: '10px', color: '#ffb268', marginTop: '8px', fontWeight: 700 }}>🥇 {k.bestKpiOrg.name}: {k.bestKpiOrg.value}%</div>}
+                {k.bestKpiOrg && <div style={{ fontSize: '10px', color: '#ffb268', marginTop: '8px', fontWeight: 700 }}>🥇 {k.bestKpiOrg.name}: {k.bestKpiOrg.avgKpi}%</div>}
               </div>
             </div>
             {/* KPI pie chart */}

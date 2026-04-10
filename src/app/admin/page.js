@@ -62,6 +62,7 @@ export default function AdminDashboard() {
   const strategy = stats?.strategy;
 
   const periodLabel = useCustomRange ? `${customDateStart} → ${customDateEnd}` : (period === 'monthly' ? 'Bu oy' : period === 'weekly' ? 'Bu hafta' : period === 'daily' ? 'Bugun' : 'Barcha vaqt');
+  const periodPrefix = useCustomRange ? 'Tanlangan' : (period === 'monthly' ? 'Oylik' : period === 'weekly' ? 'Haftalik' : period === 'daily' ? 'Bugungi' : 'Jami');
 
   return (
     <div className="app-layout">
@@ -95,9 +96,9 @@ export default function AdminDashboard() {
           {/* 1-4: Asosiy statlar */}
           <div className="stats-grid" style={{ marginBottom: '20px' }}>
             <StatCard label="Jami Xodimlar" value={stats?.totalEmployees || 0} sub="Sotuv jamoasi" color="var(--primary-500)" />
-            <StatCard label="Oylik Lidlar" value={stats?.totalQualityLeads || 0} sub="Sifatli leadlar" color="var(--accent-blue)" />
-            <StatCard label="Oylik Sotuvlar" value={stats?.totalSales || 0} sub="Yopilgan savdolar" color="var(--accent-teal)" />
-            <StatCard label="Oylik Tushum" value={`${formatCurrency(stats?.totalRevenue || 0)} so'm`} sub="Jami tushum" color="#8b5cf6" isText />
+            <StatCard label={`${periodPrefix} Lidlar`} value={stats?.totalQualityLeads || 0} sub="Sifatli leadlar" color="var(--accent-blue)" />
+            <StatCard label={`${periodPrefix} Sotuvlar`} value={stats?.totalSales || 0} sub="Yopilgan savdolar" color="var(--accent-teal)" />
+            <StatCard label={`${periodPrefix} Tushum`} value={`${formatCurrency(stats?.totalRevenue || 0)} so'm`} sub="Jami tushum" color="#8b5cf6" isText />
           </div>
 
           {/* 5: O'rtacha chek | 7: Strategiya | 8: Konversiya | 11: Davomat */}

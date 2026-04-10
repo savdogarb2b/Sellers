@@ -56,8 +56,7 @@ export async function GET(request) {
   // ====== ADMIN STATS — 23+ METRICS ======
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  
+
   // 7 kun oldin
   const weekAgo = new Date(todayStart);
   weekAgo.setDate(weekAgo.getDate() - 7);
@@ -78,16 +77,16 @@ export async function GET(request) {
 
   const totalEmployees = employees.length;
   const allReports = employees.flatMap(e => e.dailyReports);
-  const sumLeads = (reports) => reports.reduce((sum, report) => sum + (report.leadStatuses ? report.leadStatuses.reduce((acc, status) => acc + (status.count || 0), 0) : 0), 0);
+  const sumLeads = (reports) => reports.reduce((sum, report) => sum + (report.qualityLeads || 0), 0);
   const sumSales = (reports) => reports.reduce((sum, report) => sum + (report.sales || 0), 0);
   const sumRevenue = (reports) => reports.reduce((sum, report) => sum + (report.revenue || 0), 0);
   const toPercent = (sales, leads) => leads > 0 ? Math.round((sales / leads) * 1000) / 10 : 0;
 
   const filteredReports = startDate && endDate
     ? allReports.filter(r => {
-        const reportDate = new Date(r.date);
-        return reportDate >= startDate && reportDate < endDate;
-      })
+      const reportDate = new Date(r.date);
+      return reportDate >= startDate && reportDate < endDate;
+    })
     : allReports;
 
   // ---- SOTUV ----
@@ -127,20 +126,30 @@ export async function GET(request) {
   const salesPerEmployee = totalEmployees > 0 ? Math.round(totalSales / totalEmployees) : 0;
 
   // Haftalik trend: bu haftadagi vs o'tgan haftadagi sotuvlar
-  const lastWeekSales = employees.reduce((sum, e) => 
+  const lastWeekSales = employees.reduce((sum, e) =>
     sum + e.dailyReports.filter(r => { const d = new Date(r.date); return d >= twoWeeksAgo && d < weekAgo; }).reduce((s, r) => s + r.sales, 0), 0);
   const weeklyTrendPercent = lastWeekSales > 0 ? Math.round((thisWeekSales - lastWeekSales) / lastWeekSales * 100) : (thisWeekSales > 0 ? 100 : 0);
 
   // ---- MOLIYA ----
-  const totalPenalties = employees.reduce((sum, e) => sum + e.penaltyRecords.reduce((s, r) => s + r.amount, 0), 0);
-  const totalBonuses = employees.reduce((sum, e) => sum + e.bonusRecords.reduce((s, r) => s + r.amount, 0), 0);
   const totalSalaryFund = employees.reduce((sum, e) => sum + (e.fixedSalary || 0), 0);
-  const netFinancialBalance = totalSalaryFund + totalBonuses - totalPenalties;
+
+  // Period bo'yicha filtrlangan moliya
+  const filterByPeriod = (records) => {
+    if (!startDate || !endDate) return records;
+    return records.filter(r => {
+      const d = new Date(r.date);
+      return d >= startDate && d < endDate;
+    });
+  };
+
+  const totalPenalties = employees.reduce((sum, e) => sum + filterByPeriod(e.penaltyRecords).reduce((s, r) => s + r.amount, 0), 0);
+  const totalBonuses = employees.reduce((sum, e) => sum + filterByPeriod(e.bonusRecords).reduce((s, r) => s + r.amount, 0), 0);
+  const netFinancialBalance = totalRevenue - (totalSalaryFund + totalBonuses - totalPenalties);
   const avgBonusPerEmployee = totalEmployees > 0 ? Math.round(totalBonuses / totalEmployees) : 0;
   const avgPenaltyPerEmployee = totalEmployees > 0 ? Math.round(totalPenalties / totalEmployees) : 0;
 
   // Oylik (joriy oy) bonuslar va jarimalar
-  const monthlyBonuses = employees.reduce((sum, e) => 
+  const monthlyBonuses = employees.reduce((sum, e) =>
     sum + e.bonusRecords.filter(r => { const d = new Date(r.date); return d.getMonth() + 1 === currentMonth && d.getFullYear() === currentYear; }).reduce((s, r) => s + r.amount, 0), 0);
   const monthlyPenalties = employees.reduce((sum, e) =>
     sum + e.penaltyRecords.filter(r => { const d = new Date(r.date); return d.getMonth() + 1 === currentMonth && d.getFullYear() === currentYear; }).reduce((s, r) => s + r.amount, 0), 0);
@@ -149,8 +158,8 @@ export async function GET(request) {
   const allKpis = employees.flatMap(e => e.kpis);
   const activeKpis = allKpis.filter(k => k.month === currentMonth && k.year === currentYear);
   const kpiAchievedCount = activeKpis.filter(k => k.targetValue > 0 && (k.currentValue / k.targetValue) >= 1).length;
-  const avgKpiProgress = activeKpis.length > 0 
-    ? Math.round(activeKpis.reduce((sum, k) => sum + (k.targetValue > 0 ? Math.min(k.currentValue / k.targetValue * 100, 100) : 0), 0) / activeKpis.length) 
+  const avgKpiProgress = activeKpis.length > 0
+    ? Math.round(activeKpis.reduce((sum, k) => sum + (k.targetValue > 0 ? (k.currentValue / k.targetValue) * 100 : 0), 0) / activeKpis.length)
     : 0;
 
   // Eng past KPI xodim
@@ -159,13 +168,13 @@ export async function GET(request) {
     const avg = empKpis.length > 0 ? empKpis.reduce((s, k) => s + (k.targetValue > 0 ? k.currentValue / k.targetValue * 100 : 0), 0) / empKpis.length : null;
     return { name: e.name, kpiAvg: avg };
   }).filter(e => e.kpiAvg !== null);
-  
-  const lowestKpiEmployee = empKpiScores.length > 0 
-    ? empKpiScores.reduce((min, e) => e.kpiAvg < min.kpiAvg ? e : min) 
+
+  const lowestKpiEmployee = empKpiScores.length > 0
+    ? empKpiScores.reduce((min, e) => e.kpiAvg < min.kpiAvg ? e : min)
     : { name: '—', kpiAvg: 0 };
 
   // ---- DAVOMAT ----
-  const todayAttendance = employees.filter(e => 
+  const todayAttendance = employees.filter(e =>
     e.attendances.some(a => new Date(a.date).toDateString() === todayStart.toDateString())
   ).length;
   const attendanceRate = totalEmployees > 0 ? Math.round(todayAttendance / totalEmployees * 100) : 0;
@@ -186,11 +195,8 @@ export async function GET(request) {
   ).length;
 
   const employeeConversions = employees.map(employee => {
-    const employeeFilteredReports = filteredReports.filter(report => {
-      const reportDate = new Date(report.date);
-      const empReports = employee.dailyReports.map(r => r.id);
-      return empReports.includes(report.id);
-    });
+    const empReportIds = new Set(employee.dailyReports.map(r => r.id));
+    const employeeFilteredReports = filteredReports.filter(report => empReportIds.has(report.id));
     const employeeLeads = sumLeads(employeeFilteredReports);
     const employeeSales = sumSales(employeeFilteredReports);
     const employeeRevenue = sumRevenue(employeeFilteredReports);
@@ -227,7 +233,16 @@ export async function GET(request) {
   let strategyActualSales = 0;
   if (strategy) {
     strategyTargetSales = strategy.targetSales;
-    strategyActualSales = strategy.months.reduce((s, m) => s + m.actualSales, 0);
+
+    // actualSales ni haqiqiy hisobotlardan hisoblaymiz (strategy davri bo'yicha)
+    const strategyStart = new Date(strategy.startDate);
+    const strategyEnd = new Date(strategy.endDate);
+    strategyEnd.setMonth(strategyEnd.getMonth() + 1); // end of last month
+    const strategyReports = allReports.filter(r => {
+      const d = new Date(r.date);
+      return d >= strategyStart && d < strategyEnd;
+    });
+    strategyActualSales = strategyReports.reduce((s, r) => s + (r.sales || 0), 0);
     strategyProgress = strategyTargetSales > 0 ? Math.round(strategyActualSales / strategyTargetSales * 100) : 0;
   }
 

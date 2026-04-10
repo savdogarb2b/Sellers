@@ -41,22 +41,24 @@ export async function POST(request) {
     const [h, m] = user.workStartTime.split(':').map(Number);
     const startTime = new Date(now);
     startTime.setHours(h, m, 0, 0);
-    const thresholdMinutes = Math.max(0, user.latenessThreshold || 0);
-    const penaltyTime = new Date(startTime.getTime() + thresholdMinutes * 60000);
+    const thresholdMinutes = Math.max(0, user.latenessThreshold || 15);
+    const lateDeadline = new Date(startTime.getTime() + thresholdMinutes * 60000);
 
-    if (now > startTime) {
+    // Threshold dan keyin kelgan = kechikkan
+    if (now > lateDeadline) {
       isLate = true;
       lateMinutes = Math.ceil((now - startTime) / 60000);
       lateCountTotal = previousLateCount + 1;
-      warningIssued = lateCountTotal <= 2;
 
-      if (warningIssued) {
+      if (lateCountTotal < 3) {
+        // 1-2 marta: faqat ogohlantirish
+        warningIssued = true;
         warningMessage = `${lateCountTotal}-kechikish. Hozircha ogohlantirish berildi. 3-kechikishdan boshlab jarima yoziladi.`;
+      } else {
+        // 3+ marta: jarima
+        penaltyApplied = user.latenessPenalty || 0;
+        warningMessage = `${lateCountTotal}-kechikish. Jarima qo'llanildi: ${penaltyApplied} so'm.`;
       }
-    }
-
-    if (lateCountTotal >= 3 && now > penaltyTime) {
-      penaltyApplied = user.latenessPenalty || 0;
     }
   }
 

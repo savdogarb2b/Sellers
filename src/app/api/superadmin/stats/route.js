@@ -95,16 +95,21 @@ export async function GET(request) {
   const totalRevenue = allReports.reduce((s, r) => s + (r.revenue || 0), 0);
   const totalSales = allReports.reduce((s, r) => s + (r.sales || 0), 0);
 
-  const overallConversion = monthTotalCalls > 0
-    ? Math.round((monthQualityLeads / monthTotalCalls) * 100)
+  // Konversiya: Sotuv / Sifatli Lid (Admin va Employee bilan bir xil formula)
+  const overallConversion = monthQualityLeads > 0
+    ? Math.round((totalSales / monthQualityLeads) * 1000) / 10
+    : 0;
+  // Lid-to-Call ratio (alohida ko'rsatkich sifatida)
+  const leadToCallRatio = monthTotalCalls > 0
+    ? Math.round((monthQualityLeads / monthTotalCalls) * 1000) / 10
     : 0;
 
   // Revenue efficiency metrics
   const revenuePerCall = monthTotalCalls > 0 ? Math.round(totalRevenue / monthTotalCalls) : 0;
   const revenuePerEmployee = totalEmployees > 0 ? Math.round(totalRevenue / totalEmployees) : 0;
   const revenuePerSale = totalSales > 0 ? Math.round(totalRevenue / totalSales) : 0;
-  const netProfit = totalRevenue - totalSalaryFund;
-  const payrollToRevenueRatio = totalRevenue > 0 ? Math.round((totalSalaryFund / totalRevenue) * 100) : 0;
+  const netProfit = totalRevenue - (totalSalaryFund + monthBonuses - monthPenalties);
+  const payrollToRevenueRatio = totalRevenue > 0 ? Math.round(((totalSalaryFund + monthBonuses - monthPenalties) / totalRevenue) * 100) : 0;
 
   // Avg calls per employee per day
   const daysCount = daysParam && daysParam !== 'all' ? parseInt(daysParam) : 30;
@@ -138,7 +143,8 @@ export async function GET(request) {
     const empOfficeVisits = empReports.reduce((s, r) => s + (r.officeVisits || 0), 0);
     const empRevenue = empReports.reduce((s, r) => s + (r.revenue || 0), 0);
     const empSales = empReports.reduce((s, r) => s + (r.sales || 0), 0);
-    const empConversion = empTotalCalls > 0 ? Math.round((empQualityLeads / empTotalCalls) * 100) : 0;
+    // Konversiya: Sotuv / Sifatli Lid (barcha rollar uchun bir xil)
+    const empConversion = empQualityLeads > 0 ? Math.round((empSales / empQualityLeads) * 1000) / 10 : 0;
     const empRevenuePerCall = empTotalCalls > 0 ? Math.round(empRevenue / empTotalCalls) : 0;
 
     // KPI stats for this employee
@@ -186,7 +192,7 @@ export async function GET(request) {
     const orgAvgKpi = orgKpis.length > 0
       ? Math.round(orgKpis.reduce((s, k) => s + (k.targetValue > 0 ? (k.currentValue / k.targetValue) * 100 : 0), 0) / orgKpis.length)
       : 0;
-    const orgNetProfit = orgRevenue - orgSalaryFund;
+    const orgNetProfit = orgRevenue - (orgSalaryFund + orgBonuses - orgPenalties);
     const orgRevenuePerEmp = orgEmps.length > 0 ? Math.round(orgRevenue / orgEmps.length) : 0;
     const orgCapacityUsed = org.maxEmployees > 0 ? Math.round((orgEmps.length / org.maxEmployees) * 100) : 0;
 
@@ -231,7 +237,7 @@ export async function GET(request) {
     sales: {
       monthQualityLeads, monthNonQualityLeads, monthTotalCalls,
       totalIncomingCalls, totalOutgoingCalls, totalOfficeVisits,
-      overallConversion, totalRevenue, totalSales,
+      overallConversion, leadToCallRatio, totalRevenue, totalSales,
       revenuePerCall, revenuePerEmployee, revenuePerSale,
       avgCallsPerEmployeePerDay, topSalesOrg,
     },

@@ -14,6 +14,7 @@ export async function GET(request) {
   const year = yearStr ? Number(yearStr) : null;
 
   const orgId = session.user.organizationId;
+  if (!orgId) return NextResponse.json({ error: 'Tashkilot topilmadi' }, { status: 400 });
 
   const employees = await prisma.user.findMany({
     where: { organizationId: orgId, role: 'EMPLOYEE' },
@@ -40,8 +41,9 @@ export async function GET(request) {
     const revenue = periodReports.reduce((sum, r) => sum + (r.revenue || 0), 0);
     const totalCalls = periodReports.reduce((sum, r) => sum + (r.totalCalls || 0), 0);
     
-    // Konversiya: (Sotuv / Gaplashilgan mijozlar) * 100
-    const conversion = totalCalls > 0 ? (totalSales / totalCalls * 100) : 0;
+    // Konversiya: (Sotuv / Sifatli Lid) * 100 — Admin va Employee bilan bir xil formula
+    const totalQLeads = periodReports.reduce((sum, r) => sum + (r.qualityLeads || 0), 0);
+    const conversion = totalQLeads > 0 ? (totalSales / totalQLeads * 100) : 0;
     
     const totalPenalties = periodPenaltiesRecs.reduce((sum, r) => sum + r.amount, 0);
     const totalBonuses = periodBonusesRecs.reduce((sum, r) => sum + r.amount, 0);
@@ -66,5 +68,17 @@ export async function GET(request) {
   });
 
   ratings.sort((a, b) => b.score - a.score);
+
+  const page = searchParams.has('page') ? Math.max(1, parseInt(searchParams.get('page')) || 1) : null;
+  if (page) {
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit')) || 20));
+    const start = (page - 1) * limit;
+    const paged = ratings.slice(start, start + limit);
+    return NextResponse.json({
+      data: paged,
+      pagination: { page, limit, total: ratings.length, totalPages: Math.ceil(ratings.length / limit) },
+    });
+  }
+
   return NextResponse.json(ratings);
 }
