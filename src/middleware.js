@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
 export async function middleware(request) {
-  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET || 'salescrm-super-secret-key-2024' });
+  const secret = process.env.NEXTAUTH_SECRET && process.env.NEXTAUTH_SECRET !== 'your-super-secret-key-change-in-production'
+    ? process.env.NEXTAUTH_SECRET
+    : 'dev-only-fallback-secret-not-for-production';
+  const token = await getToken({ req: request, secret });
   const { pathname } = request.nextUrl;
 
   // Public routes

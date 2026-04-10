@@ -1,6 +1,7 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { compare } from 'bcryptjs';
 import prisma from './prisma';
+import { rateLimit } from './rate-limit';
 
 export const authOptions = {
   providers: [
@@ -15,19 +16,29 @@ export const authOptions = {
           throw new Error('Email va parol kiritilishi kerak');
         }
 
+        const email = credentials.email.trim().toLowerCase();
+        const limitResult = rateLimit(`login:${email}`, 5, 60 * 1000);
+        if (!limitResult.success) {
+          throw new Error(`Juda ko'p urinish. ${Math.ceil(limitResult.retryAfterMs / 1000)} soniyadan keyin qayta urinib ko'ring`);
+        }
+
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email },
           include: { organization: true }
         });
 
         if (!user) {
-          throw new Error('Foydalanuvchi topilmadi');
+          throw new Error('Email yoki parol noto\'g\'ri');
+        }
+
+        if (user.organization && user.organization.status === 'DELETED') {
+          throw new Error('Tashkilot o\'chirilgan');
         }
 
         const isPasswordValid = await compare(credentials.password, user.password);
 
         if (!isPasswordValid) {
-          throw new Error('Parol noto\'g\'ri');
+          throw new Error('Email yoki parol noto\'g\'ri');
         }
 
         return {
@@ -79,6 +90,16 @@ export const authOptions = {
   },
   session: {
     strategy: 'jwt',
+    maxAge: 24 * 60 * 60, // 24 soat
   },
-  secret: process.env.NEXTAUTH_SECRET || 'salescrm-super-secret-key-2024',
+  secret: (() => {
+    if (!process.env.NEXTAUTH_SECRET || process.env.NEXTAUTH_SECRET === 'your-super-secret-key-change-in-production') {
+      console.error('XAVF: NEXTAUTH_SECRET environment variable sozlanmagan yoki default qiymatda!');
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('NEXTAUTH_SECRET must be set in production');
+      }
+      return 'dev-only-fallback-secret-not-for-production';
+    }
+    return process.env.NEXTAUTH_SECRET;
+  })(),
 };

@@ -80,13 +80,20 @@ export async function generateEmployeeLogin(fullName, orgName) {
 
 /**
  * Generate a secure but memorable password
- * Format: Name2chars + random4digits + specialchar
+ * Format: Prefix + random6digits + 2 special chars (min 10 chars, has upper+lower+digit+special)
  */
 export function generatePassword(name) {
   const clean = transliterate(name);
-  const prefix = clean.slice(0, 3).charAt(0).toUpperCase() + clean.slice(1, 3);
-  const digits = Math.floor(1000 + Math.random() * 9000);
-  const specials = ['!', '@', '#', '$'];
-  const special = specials[Math.floor(Math.random() * specials.length)];
-  return `${prefix}${digits}${special}`;
+  const prefix = clean.slice(0, 2).charAt(0).toUpperCase() + clean.slice(1, 2);
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz';
+  const digits = '23456789';
+  const specials = '!@#$%&*';
+
+  let password = prefix;
+  for (let i = 0; i < 3; i++) password += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < 3; i++) password += digits[Math.floor(Math.random() * digits.length)];
+  password += specials[Math.floor(Math.random() * specials.length)];
+  password += specials[Math.floor(Math.random() * specials.length)];
+
+  return password.split('').sort(() => Math.random() - 0.5).join('');
 }

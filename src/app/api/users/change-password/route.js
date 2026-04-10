@@ -16,8 +16,12 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Barcha maydonlar to\'ldirilishi shart' }, { status: 400 });
   }
 
-  if (newPassword.length < 6) {
-    return NextResponse.json({ error: 'Yangi parol kamida 6 ta belgidan iborat bo\'lishi kerak' }, { status: 400 });
+  if (newPassword.length < 8) {
+    return NextResponse.json({ error: 'Yangi parol kamida 8 ta belgidan iborat bo\'lishi kerak' }, { status: 400 });
+  }
+
+  if (!/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+    return NextResponse.json({ error: 'Parolda kamida 1 ta katta harf, 1 ta kichik harf va 1 ta raqam bo\'lishi kerak' }, { status: 400 });
   }
 
   // Get user from DB
