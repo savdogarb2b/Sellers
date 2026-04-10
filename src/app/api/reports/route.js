@@ -33,12 +33,27 @@ export async function GET(request) {
     };
   }
 
-  const reports = await prisma.dailyReport.findMany({
-    where,
-    include: { leadStatuses: { include: { stage: true } }, user: { select: { id: true, name: true } } },
-    orderBy: { date: 'desc' },
-    take: 200,
-  });
+  const page = searchParams.has('page') ? Math.max(1, parseInt(searchParams.get('page')) || 1) : null;
+  const limit = Math.min(200, Math.max(1, parseInt(searchParams.get('limit')) || 50));
+  const skip = page ? (page - 1) * limit : 0;
+
+  const [reports, total] = await Promise.all([
+    prisma.dailyReport.findMany({
+      where,
+      include: { leadStatuses: { include: { stage: true } }, user: { select: { id: true, name: true } } },
+      orderBy: { date: 'desc' },
+      skip,
+      take: page ? limit : 200,
+    }),
+    page ? prisma.dailyReport.count({ where }) : Promise.resolve(0),
+  ]);
+
+  if (page) {
+    return NextResponse.json({
+      data: reports,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    });
+  }
 
   return NextResponse.json(reports);
 }
@@ -47,7 +62,13 @@ export async function POST(request) {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== 'EMPLOYEE') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { incomingCalls, outgoingCalls, qualityLeads, nonQualityLeads, officeVisits, sales, revenue, leadStatuses } = await request.json();
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Noto\'g\'ri so\'rov formati' }, { status: 400 });
+  }
+  const { incomingCalls, outgoingCalls, qualityLeads, nonQualityLeads, officeVisits, sales, revenue, leadStatuses } = body;
   const userId = session.user.id;
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });

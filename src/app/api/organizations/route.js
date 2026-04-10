@@ -40,8 +40,17 @@ export async function POST(request) {
     ? 50
     : Number(maxEmployees);
 
-  if (!orgName || !adminName) {
-    return NextResponse.json({ error: 'Tashkilot nomi va admin ismi kerak' }, { status: 400 });
+  if (!orgName || !orgName.trim()) {
+    return NextResponse.json({ error: 'Tashkilot nomi kerak' }, { status: 400 });
+  }
+  if (!adminName || !adminName.trim()) {
+    return NextResponse.json({ error: 'Admin ismi kerak' }, { status: 400 });
+  }
+  if (orgName.trim().length < 2) {
+    return NextResponse.json({ error: 'Tashkilot nomi kamida 2 ta belgidan iborat bo\'lishi kerak' }, { status: 400 });
+  }
+  if (orgPhone && !/^[+\d\s()-]{5,20}$/.test(orgPhone)) {
+    return NextResponse.json({ error: 'Telefon raqami formati noto\'g\'ri' }, { status: 400 });
   }
 
   const adminEmail = await generateUniqueLogin(adminName || orgName);
@@ -95,6 +104,15 @@ export async function PUT(request) {
   if (!id) {
     return NextResponse.json({ error: 'ID kerak' }, { status: 400 });
   }
+  if (name !== undefined && (!name || name.trim().length < 2)) {
+    return NextResponse.json({ error: 'Tashkilot nomi kamida 2 ta belgidan iborat bo\'lishi kerak' }, { status: 400 });
+  }
+  if (phone !== undefined && phone && !/^[+\d\s()-]{5,20}$/.test(phone)) {
+    return NextResponse.json({ error: 'Telefon raqami formati noto\'g\'ri' }, { status: 400 });
+  }
+
+  const existing = await prisma.organization.findUnique({ where: { id }, select: { id: true } });
+  if (!existing) return NextResponse.json({ error: 'Tashkilot topilmadi' }, { status: 404 });
 
   const updated = await prisma.organization.update({
     where: { id },
@@ -159,6 +177,15 @@ export async function DELETE(request) {
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
+  if (!id) return NextResponse.json({ error: 'ID kerak' }, { status: 400 });
+
+  const org = await prisma.organization.findUnique({ where: { id }, select: { status: true, _count: { select: { users: true } } } });
+  if (!org) return NextResponse.json({ error: 'Tashkilot topilmadi' }, { status: 404 });
+
+  if (org.status !== 'DELETED') {
+    return NextResponse.json({ error: 'Faqat DELETED statusdagi tashkilotni butunlay o\'chirish mumkin. Avval PATCH orqali o\'chiring.' }, { status: 400 });
+  }
+
   await prisma.organization.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }

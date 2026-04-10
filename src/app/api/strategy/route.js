@@ -24,7 +24,18 @@ export async function POST(request) {
   }
 
   const { targetSales, targetRevenue, targetConversion, startDate, endDate } = await request.json();
-  
+
+  if (!targetSales || !targetConversion || !startDate || !endDate) {
+    return NextResponse.json({ error: 'Barcha maydonlar to\'ldirilishi shart' }, { status: 400 });
+  }
+  if (parseInt(targetSales) <= 0) return NextResponse.json({ error: 'Maqsad sotuv musbat bo\'lishi kerak' }, { status: 400 });
+  if (parseFloat(targetConversion) <= 0 || parseFloat(targetConversion) > 100) {
+    return NextResponse.json({ error: 'Konversiya 0 dan 100 gacha bo\'lishi kerak' }, { status: 400 });
+  }
+  if (new Date(startDate) >= new Date(endDate)) {
+    return NextResponse.json({ error: 'Boshlanish sanasi tugash sanasidan oldin bo\'lishi kerak' }, { status: 400 });
+  }
+
   const start = new Date(startDate);
   const end = new Date(endDate);
   const months = [];

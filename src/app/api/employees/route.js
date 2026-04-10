@@ -5,9 +5,14 @@ import { authOptions } from '@/lib/auth';
 import { hash } from 'bcryptjs';
 import { generateEmployeeLogin, generatePassword } from '@/lib/credentials';
 
-export async function GET() {
+export async function GET(request) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { searchParams } = new URL(request.url);
+  const page = Math.max(1, parseInt(searchParams.get('page')) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit')) || 50));
+  const skip = (page - 1) * limit;
 
   const where = session.user.role === 'ADMIN'
     ? { organizationId: session.user.organizationId }
@@ -15,17 +20,24 @@ export async function GET() {
       ? { id: session.user.id }
       : {};
 
-  const employees = await prisma.user.findMany({
-    where: { ...where, role: 'EMPLOYEE' },
-    include: {
-      kpis: true,
-      penaltyRecords: true,
-      bonusRecords: true,
-      dailyReports: { include: { leadStatuses: true } },
-      attendances: { orderBy: { date: 'desc' }, take: 30 },
-    },
-    orderBy: { name: 'asc' },
-  });
+  const fullWhere = { ...where, role: 'EMPLOYEE' };
+
+  const [employees, total] = await Promise.all([
+    prisma.user.findMany({
+      where: fullWhere,
+      include: {
+        kpis: true,
+        penaltyRecords: true,
+        bonusRecords: true,
+        dailyReports: { include: { leadStatuses: true } },
+        attendances: { orderBy: { date: 'desc' }, take: 30 },
+      },
+      orderBy: { name: 'asc' },
+      skip,
+      take: limit,
+    }),
+    prisma.user.count({ where: fullWhere }),
+  ]);
 
   const lateCounts = employees.length > 0
     ? await prisma.attendance.groupBy({
@@ -60,6 +72,13 @@ export async function GET() {
     };
   });
 
+  if (searchParams.has('page')) {
+    return NextResponse.json({
+      data: enrichedEmployees,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    });
+  }
+
   return NextResponse.json(enrichedEmployees);
 }
 
@@ -72,7 +91,8 @@ export async function POST(request) {
   const body = await request.json();
   const { name, fixedSalary, workStartTime, workEndTime, latenessPenalty, latenessThreshold, reportSubmissionThreshold, locationLat, locationLng, locationRadius, kpis } = body;
 
-  if (!name) return NextResponse.json({ error: 'Xodim ismi kerak' }, { status: 400 });
+  if (!name || !name.trim()) return NextResponse.json({ error: 'Xodim ismi kerak' }, { status: 400 });
+  if (name.trim().length < 2) return NextResponse.json({ error: 'Ism kamida 2 ta belgidan iborat bo\'lishi kerak' }, { status: 400 });
 
   // Get org name for login generation
   const org = await prisma.organization.findUnique({ where: { id: session.user.organizationId } });
@@ -138,6 +158,13 @@ export async function PUT(request) {
   const body = await request.json();
   const { id, kpis: _kpis, ...raw } = body;
 
+  if (!id) return NextResponse.json({ error: 'ID kerak' }, { status: 400 });
+
+  const employee = await prisma.user.findUnique({ where: { id }, select: { organizationId: true } });
+  if (!employee || employee.organizationId !== session.user.organizationId) {
+    return NextResponse.json({ error: 'Xodim topilmadi' }, { status: 404 });
+  }
+
   // Safely parse numeric fields
   const data = {
     ...raw,
@@ -164,7 +191,22 @@ export async function DELETE(request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { searchParams } = new URL(request.url);
-  await prisma.user.delete({ where: { id: searchParams.get('id') } });
-  return NextResponse.json({ success: true });
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'ID kerak' }, { status: 400 });
+
+    const employee = await prisma.user.findUnique({ where: { id }, select: { organizationId: true, role: true } });
+    if (!employee || employee.organizationId !== session.user.organizationId) {
+      return NextResponse.json({ error: 'Xodim topilmadi' }, { status: 404 });
+    }
+    if (employee.role === 'ADMIN') {
+      return NextResponse.json({ error: 'Admin foydalanuvchini o\'chirish mumkin emas' }, { status: 403 });
+    }
+
+    await prisma.user.delete({ where: { id } });
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    return NextResponse.json({ error: 'Xodim o\'chirishda xatolik' }, { status: 500 });
+  }
 }

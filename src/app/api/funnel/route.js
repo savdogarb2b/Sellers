@@ -19,6 +19,8 @@ export async function POST(request) {
   if (!session || session.user.role !== 'ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { name } = await request.json();
+  if (!name || !name.trim()) return NextResponse.json({ error: 'Bosqich nomi kerak' }, { status: 400 });
+
   const maxOrder = await prisma.funnelStage.findFirst({
     where: { organizationId: session.user.organizationId },
     orderBy: { order: 'desc' },

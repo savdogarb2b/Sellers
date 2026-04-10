@@ -26,18 +26,31 @@ export async function POST(request) {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== 'ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { userId, penaltyId, reason, amount } = await request.json();
+  try {
+    const { userId, penaltyId, reason, amount } = await request.json();
+    if (!userId) return NextResponse.json({ error: 'Xodim tanlanishi shart' }, { status: 400 });
+    if (!reason || !reason.trim()) return NextResponse.json({ error: 'Sabab kiritilishi shart' }, { status: 400 });
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) return NextResponse.json({ error: 'Summa musbat son bo\'lishi kerak' }, { status: 400 });
 
-  const record = await prisma.penaltyRecord.create({
-    data: {
-      userId, penaltyId: penaltyId || null,
-      reason, amount: parseFloat(amount),
-      assignedById: session.user.id,
-    },
-    include: { user: { select: { name: true } } },
-  });
+    const targetUser = await prisma.user.findUnique({ where: { id: userId }, select: { organizationId: true } });
+    if (!targetUser || targetUser.organizationId !== session.user.organizationId) {
+      return NextResponse.json({ error: 'Xodim topilmadi yoki boshqa tashkilotga tegishli' }, { status: 403 });
+    }
 
-  return NextResponse.json(record);
+    const record = await prisma.penaltyRecord.create({
+      data: {
+        userId, penaltyId: penaltyId || null,
+        reason: reason.trim(), amount: parsedAmount,
+        assignedById: session.user.id,
+      },
+      include: { user: { select: { name: true } } },
+    });
+
+    return NextResponse.json(record);
+  } catch (err) {
+    return NextResponse.json({ error: 'Jarima yozishda xatolik' }, { status: 500 });
+  }
 }
 
 export async function DELETE(request) {

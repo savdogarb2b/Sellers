@@ -37,7 +37,12 @@ export async function POST(request) {
   const { userId, month, year, targetSales, targetRevenue } = await request.json();
 
   if (!userId || !month || !year) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    return NextResponse.json({ error: 'userId, month va year kerak' }, { status: 400 });
+  }
+
+  const targetUser = await prisma.user.findUnique({ where: { id: userId }, select: { organizationId: true } });
+  if (!targetUser || targetUser.organizationId !== session.user.organizationId) {
+    return NextResponse.json({ error: 'Xodim topilmadi yoki boshqa tashkilotga tegishli' }, { status: 403 });
   }
 
   const plan = await prisma.employeeMonthlyPlan.upsert({
