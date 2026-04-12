@@ -104,7 +104,9 @@ const adminGroups = [
     items: [
       { href: '/admin/strategy', label: 'Sotuv Rejasi',      icon: I.target    },
       { href: '/admin/funnel',   label: 'Sotuv Voronkasi',   icon: I.funnel    },
+      { href: '/admin/sources', label: 'Lid Manbalari',    icon: I.target    },
       { href: '/admin/reports',  label: 'Kunlik Hisobotlar', icon: I.clipboard },
+      { href: '/admin/feedback', label: 'Taklif & Shikoyat', icon: I.chatAI   },
     ],
   },
   {
@@ -116,6 +118,7 @@ const adminGroups = [
       { href: '/admin/penalties', label: 'Jarimalar',       icon: I.alertX },
       { href: '/admin/bonuses',   label: 'Bonuslar',        icon: I.gift   },
       { href: '/admin/finance',   label: 'Jarima & Bonus',  icon: I.scale  },
+      { href: '/admin/leave',     label: 'Ruxsat & Jarimalar', icon: I.clipboard },
     ],
   },
   {
@@ -125,6 +128,7 @@ const adminGroups = [
     items: [
       { href: '/admin/ratings',  label: 'Reyting',     icon: I.trophy  },
       { href: '/admin/chat',     label: 'AI Intellect', icon: I.sparkle },
+      { href: '/admin/location', label: 'Ofis Joylashuvi', icon: I.mapPin },
       { href: '/admin/settings', label: 'Sozlamalar',   icon: I.sliders },
     ],
   },
@@ -139,6 +143,8 @@ const employeeGroups = [
       { href: '/employee',          label: 'Dashboard',         icon: I.home      },
       { href: '/employee/checkin',  label: 'Nazorat Punkti',    icon: I.mapPin    },
       { href: '/employee/report',   label: 'Hisobot Yozish',    icon: I.fileEdit  },
+      { href: '/employee/feedback', label: 'Taklif & Shikoyat', icon: I.chatAI   },
+      { href: '/employee/leave',    label: 'Ruxsat So\'rash',   icon: I.clipboard },
     ],
   },
   {

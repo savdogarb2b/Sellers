@@ -18,10 +18,14 @@ model Organization {
   frozenReason     String?
   maxEmployees     Int             @default(50)
   subscriptionPlan String          @default("BASIC")
+  locationLat      Float?
+  locationLng      Float?
+  locationRadius   Int?            @default(200) // metrda
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
   bonuses          Bonus[]
   funnelStages     FunnelStage[]
+  leadSources      LeadSource[]
   penalties        Penalty[]
   salesStrategies  SalesStrategy[]
   users            User[]
@@ -62,6 +66,8 @@ model User {
   kpis                      KPI[]
   assignedPenalties         PenaltyRecord[]       @relation("AssignedPenalties")
   penaltyRecords            PenaltyRecord[]
+  customerFeedbacks         CustomerFeedback[]
+  leaveRequests             LeaveRequest[]
   organization              Organization?         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
@@ -184,6 +190,7 @@ model DailyReport {
   createdAt       DateTime                @default(now())
   user            User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
   leadStatuses    DailyReportLeadStatus[]
+  sourceStatuses  DailyReportSource[]
 }
 
 model DailyReportLeadStatus {
@@ -228,4 +235,51 @@ model EmployeeMonthlyPlan {
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, month, year])
+}
+
+model CustomerFeedback {
+  id             String   @id @default(cuid())
+  userId         String
+  type           String   // TAKLIF yoki SHIKOYAT
+  customerName   String?
+  customerPhone  String?
+  message        String
+  category       String?  // Mahsulot, Xizmat, Narx, Yetkazish, Boshqa
+  status         String   @default("YANGI") // YANGI, KORILDI, HAL_QILINDI
+  adminNote      String?
+  date           DateTime @default(now())
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model LeadSource {
+  id             String              @id @default(cuid())
+  organizationId String
+  name           String
+  icon           String?
+  order          Int                 @default(0)
+  createdAt      DateTime            @default(now())
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  reportSources  DailyReportSource[]
+}
+
+model DailyReportSource {
+  id       String      @id @default(cuid())
+  reportId String
+  sourceId String
+  count    Int         @default(0)
+  report   DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  source   LeadSource  @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+}
+
+model LeaveRequest {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // KECHIKISH, TOLIK_DAM, YARIM_KUN
+  date        DateTime
+  reason      String
+  status      String   @default("KUTILMOQDA") // KUTILMOQDA, TASDIQLANDI, RAD_ETILDI
+  adminNote   String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
