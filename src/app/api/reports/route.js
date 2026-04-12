@@ -88,6 +88,25 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Bugungi hisobot allaqachon yuborilgan' }, { status: 400 });
   }
 
+  // Ish tugash vaqtidan oldin hisobot yozish mumkin emas
+  if (user.workEndTime) {
+    const [endH, endM] = user.workEndTime.split(':').map(Number);
+    const uzHour = uzNow.getUTCHours();
+    const uzMin = uzNow.getUTCMinutes();
+    const nowTotalMin = uzHour * 60 + uzMin;
+    const endTotalMin = endH * 60 + endM;
+
+    if (nowTotalMin < endTotalMin) {
+      const qoldi = endTotalMin - nowTotalMin;
+      const soat = Math.floor(qoldi / 60);
+      const daq = qoldi % 60;
+      const vaqtStr = soat > 0 ? `${soat} soat ${daq} daqiqa` : `${daq} daqiqa`;
+      return NextResponse.json({
+        error: `Hisobotni faqat ish tugagandan keyin (${user.workEndTime} dan) topshirish mumkin. Yana ${vaqtStr} qoldi.`
+      }, { status: 400 });
+    }
+  }
+
   const report = await prisma.dailyReport.create({
     data: {
       userId,
