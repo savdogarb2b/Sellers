@@ -14,7 +14,7 @@ export default function robots() {
       },
       {
         userAgent: 'Googlebot',
-        allow: '/',
+        allow: ['/', '/login'],
         disallow: ['/api/', '/admin/', '/superadmin/', '/employee/'],
       },
     ],
