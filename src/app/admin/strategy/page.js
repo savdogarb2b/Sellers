@@ -14,21 +14,39 @@ export default function StrategyPage() {
 
   const formatCurrency = (amount) => new Intl.NumberFormat('uz-UZ').format(Number(amount || 0));
 
-  useEffect(() => { 
+  const [reports, setReports] = useState([]);
+
+  useEffect(() => {
     Promise.all([
       fetch('/api/strategy').then(r => r.ok ? r.json() : []),
       fetch('/api/employees').then(r => r.ok ? r.json() : []),
       fetch('/api/employee-plans').then(r => r.ok ? r.json() : []),
-    ]).then(([s, e, p]) => {
+      fetch('/api/reports').then(r => r.ok ? r.json() : []),
+    ]).then(([s, e, p, r]) => {
       setStrategies(Array.isArray(s) ? s : []);
       setEmployees(Array.isArray(e) ? e : []);
       setPlans(Array.isArray(p) ? p : []);
+      setReports(Array.isArray(r) ? r : []);
       setLoading(false);
     }).catch(err => {
       console.error('Fetch error:', err);
       setLoading(false);
     });
   }, []);
+
+  // Oylik haqiqiy sotuvlarni hisobotlardan hisoblash
+  const getMonthActualSales = (month, year) => {
+    return reports.filter(r => {
+      const d = new Date(r.date);
+      return (d.getMonth() + 1) === month && d.getFullYear() === year;
+    }).reduce((s, r) => s + (r.sales || 0), 0);
+  };
+  const getMonthActualRevenue = (month, year) => {
+    return reports.filter(r => {
+      const d = new Date(r.date);
+      return (d.getMonth() + 1) === month && d.getFullYear() === year;
+    }).reduce((s, r) => s + (r.revenue || 0), 0);
+  };
 
   const handleAssignPlan = async (userId, targetSales, targetRevenue) => {
     const { month, year } = showDistributeModal;
@@ -131,7 +149,9 @@ export default function StrategyPage() {
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
                 {s.months.map((m, mIdx) => {
-                  const pct = m.targetSales > 0 ? Math.round(m.actualSales / m.targetSales * 100) : 0;
+                  const actualSales = getMonthActualSales(m.month, m.year);
+                  const actualRevenue = getMonthActualRevenue(m.month, m.year);
+                  const pct = m.targetSales > 0 ? Math.round(actualSales / m.targetSales * 100) : 0;
                   const isCurrentMonth = new Date().getMonth() + 1 === m.month && new Date().getFullYear() === m.year;
                   
                   return (
@@ -176,13 +196,21 @@ export default function StrategyPage() {
                         </div>
                         <div>
                           <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '2px' }}>AMALDA</div>
-                          <div style={{ fontWeight: 800, fontSize: '15px', color: pct >= 100 ? 'var(--accent-teal)' : 'var(--text-primary)' }}>{m.actualSales}</div>
+                          <div style={{ fontWeight: 800, fontSize: '15px', color: pct >= 100 ? 'var(--accent-teal)' : 'var(--text-primary)' }}>{actualSales}</div>
                         </div>
                       </div>
 
                       <div style={{ marginBottom: '16px', background: 'var(--bg-input)', border: '1px solid var(--border-subtle)', borderRadius: '10px', padding: '10px 12px' }}>
-                        <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>OYLIK AYLANMA MAQSADI</div>
-                        <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--warning-500)' }}>{formatCurrency(m.targetRevenue)} so'm</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '2px' }}>AYLANMA REJA</div>
+                            <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--warning-500)' }}>{formatCurrency(m.targetRevenue)}</div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '2px' }}>AMALDA</div>
+                            <div style={{ fontWeight: 800, fontSize: '14px', color: actualRevenue >= m.targetRevenue ? 'var(--accent-teal)' : 'var(--text-primary)' }}>{formatCurrency(actualRevenue)}</div>
+                          </div>
+                        </div>
                       </div>
 
                       <div style={{ 

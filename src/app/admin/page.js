@@ -56,8 +56,8 @@ export default function AdminDashboard() {
   );
 
   const employeeConversions = stats?.employeeConversions || [];
-  const funnelStages = stats?.funnelStageAnalytics || [];
-  const weakestStage = stats?.weakestStage;
+  const mainFunnel = stats?.mainFunnel || [];
+  const mainWeakest = stats?.mainWeakestStage;
   const topPerformer = stats?.topPerformer;
   const strategy = stats?.strategy;
 
@@ -93,10 +93,11 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* 1-4: Asosiy statlar */}
+          {/* 1-5: Asosiy statlar */}
           <div className="stats-grid" style={{ marginBottom: '20px' }}>
             <StatCard label="Jami Xodimlar" value={stats?.totalEmployees || 0} sub="Sotuv jamoasi" color="var(--primary-500)" />
-            <StatCard label={`${periodPrefix} Lidlar`} value={stats?.totalQualityLeads || 0} sub="Sifatli leadlar" color="var(--accent-blue)" />
+            <StatCard label={`${periodPrefix} Yangi Lidlar`} value={stats?.totalNewLeads || 0} sub="Barcha yangi lidlar" color="#f59e0b" />
+            <StatCard label={`${periodPrefix} Sifatli Lidlar`} value={stats?.totalQualityLeads || 0} sub="Sifatli leadlar" color="var(--accent-blue)" />
             <StatCard label={`${periodPrefix} Sotuvlar`} value={stats?.totalSales || 0} sub="Yopilgan savdolar" color="var(--accent-teal)" />
             <StatCard label={`${periodPrefix} Tushum`} value={`${formatCurrency(stats?.totalRevenue || 0)} so'm`} sub="Jami tushum" color="#8b5cf6" isText />
           </div>
@@ -145,36 +146,59 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* 9: Sotuv bosqichlari + Zaif bosqich | 10: Xodimlar conversion chart */}
+          {/* 9: Asosiy Voronka + Zaif bosqich | 10: Xodimlar conversion chart */}
           <div className="grid-2" style={{ marginBottom: '24px' }}>
             <div className="card glass-panel" style={{ padding: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <div style={{ fontSize: '13px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>Sotuv Bosqichlari</div>
-                {weakestStage && weakestStage.name && (
+                <div style={{ fontSize: '13px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px' }}>Sotuv Voronkasi</div>
+                {mainWeakest && mainWeakest.name && (
                   <div style={{ padding: '4px 10px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.1)', fontSize: '10px', fontWeight: 700, color: 'var(--danger-500)' }}>
-                    Zaif: {weakestStage.name} ({weakestStage.dropOffPercent}% yo'qotish)
+                    Zaif: {mainWeakest.name} ({mainWeakest.dropOffPercent}% yo'qotish)
                   </div>
                 )}
               </div>
-              <div style={{ height: '220px', width: '100%' }}>
-                {funnelStages.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={funnelStages} layout="vertical" margin={{ top: 0, right: 20, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" horizontal vertical={false} />
-                      <XAxis type="number" stroke="var(--text-muted)" fontSize={10} tickLine={false} axisLine={false} />
-                      <YAxis dataKey="name" type="category" width={90} stroke="var(--text-muted)" fontSize={9} tickLine={false} axisLine={false} />
-                      <RechartsTooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-2)', borderRadius: '10px', boxShadow: 'var(--shadow-lg)', color: 'var(--text)' }} />
-                      <Bar dataKey="count" name="Lidlar" radius={[0, 6, 6, 0]}>
-                        {funnelStages.map((stage, i) => (
-                          <Cell key={stage.name} fill={stage.dropOffPercent >= 40 ? '#ef4444' : stage.dropOffPercent >= 20 ? '#f59e0b' : '#6366f1'} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="empty-state">Voronka ma'lumotlari yo'q</div>
-                )}
-              </div>
+              {mainFunnel.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {mainFunnel.map((stage, i) => {
+                    const maxCount = Math.max(...mainFunnel.map(s => s.count), 1);
+                    const pct = Math.round((stage.count / maxCount) * 100);
+                    const isWeakest = mainWeakest && stage.name === mainWeakest.name;
+                    const barColor = isWeakest ? '#ef4444' : stage.dropOffPercent >= 30 ? '#f59e0b' : '#6366f1';
+                    return (
+                      <div key={stage.name}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)', width: '14px' }}>{i + 1}</span>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: isWeakest ? '#ef4444' : 'var(--text-primary)' }}>{stage.name}</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 900 }}>{formatNumber(stage.count)}</span>
+                            {i > 0 && stage.dropOffPercent > 0 && (
+                              <span style={{ fontSize: '9px', fontWeight: 700, color: stage.dropOffPercent >= 30 ? '#ef4444' : '#f59e0b' }}>-{stage.dropOffPercent}%</span>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ height: '8px', background: 'var(--border)', borderRadius: '10px', overflow: 'hidden' }}>
+                          <div style={{ width: `${pct}%`, height: '100%', background: barColor, borderRadius: '10px', transition: 'width 0.5s' }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="empty-state">Voronka ma'lumotlari yo'q</div>
+              )}
+
+              {mainWeakest && mainWeakest.name && (
+                <div style={{ marginTop: '16px', padding: '12px 14px', background: 'rgba(239,68,68,0.05)', borderRadius: '10px', borderLeft: '3px solid #ef4444' }}>
+                  <div style={{ fontSize: '10px', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', marginBottom: '4px' }}>Zaif bosqich tahlili</div>
+                  <div style={{ fontSize: '12px', lineHeight: 1.6, color: 'var(--text-primary)' }}>
+                    <strong>{mainWeakest.name}</strong> bosqichida mijozlarning <strong>{mainWeakest.dropOffPercent}%</strong> yo'qolmoqda.
+                    {mainWeakest.conversionFromPrev < 50 && ' Bu jiddiy muammo — darhol e\'tibor qarating.'}
+                    {mainWeakest.conversionFromPrev >= 50 && mainWeakest.conversionFromPrev < 80 && ' O\'rtacha natija — yaxshilash imkoniyati bor.'}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="card glass-panel" style={{ padding: '24px' }}>
@@ -200,6 +224,33 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
+
+          {/* Lid Manbalari */}
+          {(stats?.sourceStats || []).length > 0 && (
+            <div className="card glass-panel" style={{ padding: '24px', marginBottom: '24px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px' }}>Lid Manbalari</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '12px' }}>
+                {stats.sourceStats.map((s, i) => {
+                  const maxCount = Math.max(...stats.sourceStats.map(x => x.count), 1);
+                  const pct = Math.round((s.count / maxCount) * 100);
+                  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#ef4444', '#84cc16'];
+                  const color = colors[i % colors.length];
+                  return (
+                    <div key={s.name} style={{ padding: '14px', background: 'var(--bg-elevated)', borderRadius: '12px', border: `1px solid ${color}20` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '18px' }}>{s.icon}</span>
+                        <span style={{ fontSize: '12px', fontWeight: 800 }}>{s.name}</span>
+                      </div>
+                      <div style={{ fontSize: '22px', fontWeight: 900, color, marginBottom: '6px' }}>{s.count}</div>
+                      <div style={{ height: '4px', background: 'var(--border)', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: '4px' }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* 10: Xodimlar ro'yxati */}
           <div className="card glass-panel">

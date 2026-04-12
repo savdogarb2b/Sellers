@@ -67,30 +67,52 @@ export default function CheckinPage() {
 
   const handleCheckin = async () => {
     setStatus('loading');
-    setMessage('Tasdiqlanmoqda...');
-    try {
-      const res = await fetch('/api/attendance', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setStatus('done');
-        setTodayAttendance(data);
-        setMessage(data.isLate
-          ? (data.warningIssued
-              ? `Kechikib keldingiz! (${data.lateMinutes} daqiqa). ${data.warningMessage}`
-              : `Kechikib keldingiz! (${data.lateMinutes} daqiqa, jarima: ${data.penaltyApplied?.toLocaleString()} so'm)`) 
-          : ' Muvaffaqiyatli keldingiz!');
-        const upd = await fetch('/api/attendance').then(r => r.json());
-        setAllAttendance(upd);
-      } else {
+    setMessage('Joylashuv aniqlanmoqda...');
+
+    const sendCheckin = async (latitude, longitude) => {
+      setMessage('Tasdiqlanmoqda...');
+      try {
+        const res = await fetch('/api/attendance', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ latitude, longitude }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setStatus('done');
+          setTodayAttendance(data);
+          setMessage(data.isLate
+            ? (data.warningIssued
+                ? `Kechikib keldingiz! (${data.lateMinutes} daqiqa). ${data.warningMessage}`
+                : `Kechikib keldingiz! (${data.lateMinutes} daqiqa, jarima: ${data.penaltyApplied?.toLocaleString()} so'm)`)
+            : ' Muvaffaqiyatli keldingiz!');
+          const upd = await fetch('/api/attendance').then(r => r.json());
+          setAllAttendance(upd);
+        } else {
+          setStatus('error');
+          setMessage(data.error || 'Xatolik yuz berdi');
+        }
+      } catch (err) {
         setStatus('error');
-        setMessage(data.error || 'Xatolik yuz berdi');
+        setMessage(err.message || 'Xatolik yuz berdi');
       }
-    } catch (err) {
-      setStatus('error');
-      setMessage(err.message || 'Xatolik yuz berdi');
+    };
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => sendCheckin(pos.coords.latitude, pos.coords.longitude),
+        (err) => {
+          // GPS ruxsat bermadi yoki aniqlab bo'lmadi — baribir yuborish (server tekshiradi)
+          if (err.code === 1) {
+            setStatus('error');
+            setMessage('GPS ruxsati berilmadi. Brauzer sozlamalaridan joylashuvga ruxsat bering.');
+          } else {
+            sendCheckin(null, null);
+          }
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    } else {
+      sendCheckin(null, null);
     }
   };
 

@@ -33,7 +33,17 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Foydalanuvchi topilmadi. Iltimos, tizimdan chiqib qayta kiring (Logout/Login).' }, { status: 401 });
   }
 
-  const { message, sessionId } = await request.json();
+  let reqBody;
+  try {
+    reqBody = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Noto\'g\'ri so\'rov' }, { status: 400 });
+  }
+  const { message, sessionId } = reqBody;
+
+  if (!message || !message.trim()) {
+    return NextResponse.json({ error: 'Xabar yozilishi kerak' }, { status: 400 });
+  }
 
   if (sessionId) {
     const sessionExists = await prisma.chatSession.findUnique({ where: { id: sessionId } });
@@ -49,6 +59,46 @@ export async function POST(request) {
   }
 
 
+
+  // Feedback va manba ma'lumotlarini olish (faqat organizationId mavjud bo'lganda)
+  let feedbackContext = '';
+  let sourceContext = '';
+  const orgId = session.user.organizationId;
+
+  if (orgId) {
+    try {
+      const recentFeedbacks = await prisma.customerFeedback.findMany({
+        where: { user: { organizationId: orgId } },
+        orderBy: { date: 'desc' },
+        take: 20,
+        include: { user: { select: { name: true } } },
+      });
+      if (recentFeedbacks.length > 0) {
+        const takliflar = recentFeedbacks.filter(f => f.type === 'TAKLIF').length;
+        const shikoyatlar = recentFeedbacks.filter(f => f.type === 'SHIKOYAT').length;
+        const yangi = recentFeedbacks.filter(f => f.status === 'YANGI').length;
+        feedbackContext = `\n\nMIJOZ FIKRLARI (oxirgi 20 ta):
+Jami takliflar: ${takliflar}, Shikoyatlar: ${shikoyatlar}, Yangi (ko'rilmagan): ${yangi}
+${recentFeedbacks.slice(0, 10).map(f => `- [${f.type}] ${f.user.name}: "${f.message.slice(0, 100)}" (${f.category}, ${f.status})`).join('\n')}`;
+      }
+    } catch(e) {}
+
+    try {
+      const sourcesData = await prisma.dailyReportSource.findMany({
+        where: { report: { user: { organizationId: orgId } } },
+        include: { source: { select: { name: true } } },
+      });
+      if (sourcesData.length > 0) {
+        const sourceMap = {};
+        sourcesData.forEach(sd => {
+          const name = sd.source?.name || 'Noma\'lum';
+          sourceMap[name] = (sourceMap[name] || 0) + (sd.count || 0);
+        });
+        const sorted = Object.entries(sourceMap).sort((a, b) => b[1] - a[1]);
+        sourceContext = `\n\nLID MANBALARI:\n${sorted.map(([name, count]) => `- ${name}: ${count} ta lid`).join('\n')}`;
+      }
+    } catch(e) {}
+  }
 
   const systemPrompt = `Sen 'Executive AI' - SalesCRM tahlilchisisan. O'zbek tilida, markdown formatida qisqa va chiroyli javob ber.
 Agar foydalanuvchi statistika, graf yoki chart so'rasa, albatta uni quyidagi formatda JSON kod blokida qaytar, chunki tizim uni chiroyli dashboard qilib chizadi.
@@ -66,7 +116,7 @@ Agar foydalanuvchi statistika, graf yoki chart so'rasa, albatta uni quyidagi for
   }
 }
 \`\`\`
-Sizning vazifangiz boshqaruvchilarga KPI va moliyaviy ma'lumotlarni tahlil qilish.`;
+Sizning vazifangiz boshqaruvchilarga KPI, moliyaviy ma'lumotlarni, va MIJOZ TAKLIF/SHIKOYATLARNI tahlil qilish. Agar mijoz fikrlari haqida so'ralsa, ularni kategoriya, turi va trendlar bo'yicha chuqur tahlil qil. Agar lid manbalari haqida so'ralsa, qaysi manba eng ko'p lid keltirganini tahlil qil.${feedbackContext}${sourceContext}`;
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {

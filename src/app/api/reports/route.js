@@ -40,7 +40,7 @@ export async function GET(request) {
   const [reports, total] = await Promise.all([
     prisma.dailyReport.findMany({
       where,
-      include: { leadStatuses: { include: { stage: true } }, user: { select: { id: true, name: true } } },
+      include: { leadStatuses: { include: { stage: true } }, sourceStatuses: { include: { source: true } }, user: { select: { id: true, name: true } } },
       orderBy: { date: 'desc' },
       skip,
       take: page ? limit : 200,
@@ -68,7 +68,7 @@ export async function POST(request) {
   } catch {
     return NextResponse.json({ error: 'Noto\'g\'ri so\'rov formati' }, { status: 400 });
   }
-  const { incomingCalls, outgoingCalls, qualityLeads, nonQualityLeads, officeVisits, sales, revenue, leadStatuses } = body;
+  const { incomingCalls, outgoingCalls, qualityLeads, nonQualityLeads, officeVisits, sales, revenue, leadStatuses, sourceStatuses } = body;
   const userId = session.user.id;
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -125,8 +125,14 @@ export async function POST(request) {
           count: parseInt(ls.count) || 0,
         })),
       } : undefined,
+      sourceStatuses: sourceStatuses?.length ? {
+        create: sourceStatuses.map(ss => ({
+          sourceId: ss.sourceId,
+          count: parseInt(ss.count) || 0,
+        })),
+      } : undefined,
     },
-    include: { leadStatuses: { include: { stage: true } } },
+    include: { leadStatuses: { include: { stage: true } }, sourceStatuses: { include: { source: true } } },
   });
 
   if (user.workEndTime) {

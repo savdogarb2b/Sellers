@@ -5,10 +5,12 @@ import Navbar from '@/components/Navbar';
 
 export default function ReportPage() {
   const [stages, setStages] = useState([]);
+  const [sources, setSources] = useState([]);
   const [reports, setReports] = useState([]);
   const [yesterdayReport, setYesterdayReport] = useState(null);
   const [form, setForm] = useState({ incomingCalls: '', outgoingCalls: '', qualityLeads: '', nonQualityLeads: '', officeVisits: '', sales: '', revenue: '' });
   const [leadStatuses, setLeadStatuses] = useState([]);
+  const [sourceStatuses, setSourceStatuses] = useState([]);
   const [tab, setTab] = useState('form');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -17,12 +19,14 @@ export default function ReportPage() {
     Promise.all([
       fetch('/api/funnel').then(r => r.json()),
       fetch('/api/reports').then(r => r.json()),
-    ]).then(([s, r]) => {
+      fetch('/api/lead-sources').then(r => r.ok ? r.json() : []),
+    ]).then(([s, r, src]) => {
       setStages(s);
       setReports(r);
+      setSources(Array.isArray(src) ? src : []);
       setLeadStatuses(s.map(st => ({ stageId: st.id, count: '' })));
+      setSourceStatuses((Array.isArray(src) ? src : []).map(sc => ({ sourceId: sc.id, count: '' })));
 
-      // Find yesterday's report
       const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
       const yRep = r.find(rep => new Date(rep.date).toDateString() === yesterday.toDateString());
       setYesterdayReport(yRep || null);
@@ -31,20 +35,21 @@ export default function ReportPage() {
     });
   }, []);
 
-  const totalCalls = (parseInt(form.incomingCalls) || 0) + (parseInt(form.outgoingCalls) || 0);
   const todayReport = reports.find(r => new Date(r.date).toDateString() === new Date().toDateString());
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const validStatuses = leadStatuses.filter(ls => ls.count);
+    const validSources = sourceStatuses.filter(ss => ss.count);
     await fetch('/api/reports', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, leadStatuses: validStatuses }),
+      body: JSON.stringify({ ...form, leadStatuses: validStatuses, sourceStatuses: validSources }),
     });
     setSuccess(true);
     setTimeout(() => setSuccess(false), 4000);
     setForm({ incomingCalls: '', outgoingCalls: '', qualityLeads: '', nonQualityLeads: '', officeVisits: '', sales: '', revenue: '' });
     setLeadStatuses(stages.map(st => ({ stageId: st.id, count: '' })));
+    setSourceStatuses(sources.map(sc => ({ sourceId: sc.id, count: '' })));
     const r = await fetch('/api/reports'); const reps = await r.json(); setReports(reps);
 
     const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
@@ -52,6 +57,7 @@ export default function ReportPage() {
   };
 
   const updateLeadStatus = (i, count) => { const nls = [...leadStatuses]; nls[i].count = count; setLeadStatuses(nls); };
+  const updateSourceStatus = (i, count) => { const nss = [...sourceStatuses]; nss[i].count = count; setSourceStatuses(nss); };
 
   return (
     <div className="app-layout">
@@ -72,85 +78,99 @@ export default function ReportPage() {
           </div>
 
           {tab === 'form' ? (
-            <div className="grid-2 animate-in" style={{ alignItems: 'start' }}>
-              <div className="card glass-panel">
+            <div className="animate-in" style={{ maxWidth: '900px' }}>
+              <div className="card glass-panel" style={{ padding: '28px' }}>
                 {success && (
-                  <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '12px', padding: '12px', marginBottom: '16px', color: 'var(--accent-teal)', textAlign: 'center', fontWeight: 800, fontSize: '13px', textTransform: 'uppercase' }}>
+                  <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '12px', padding: '14px', marginBottom: '20px', color: 'var(--accent-teal)', textAlign: 'center', fontWeight: 800, fontSize: '13px', textTransform: 'uppercase' }}>
                      HISOBOT QABUL QILINDI
                   </div>
                 )}
                 {todayReport ? (
-                  <div className="empty-state" style={{ padding: '40px' }}>
-                    <div className="empty-state-text" style={{ fontSize: '16px', fontWeight: 900, textTransform: 'uppercase' }}>Hisobot yuborilgan</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>Ertaga yangi natijalarni kutamiz.</div>
+                  <div className="empty-state" style={{ padding: '60px' }}>
+                    <div className="empty-state-text" style={{ fontSize: '18px', fontWeight: 900, textTransform: 'uppercase' }}>Hisobot yuborilgan</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px' }}>Ertaga yangi natijalarni kutamiz.</div>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit}>
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Kiruvchi qo'ng'iroqlar</label>
+                    <div style={{ fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--primary-400)', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '16px' }}>📊</span> Kunlik Voronka
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '16px' }}>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>1. Kiruvchi qo'ng'iroq</label>
                         <input className="form-input" type="number" value={form.incomingCalls} onChange={e => setForm({...form, incomingCalls: e.target.value})} placeholder="0" min="0" required />
                       </div>
-                      <div className="form-group">
-                        <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Chiquvchi qo'ng'iroqlar</label>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>2. Zadacha</label>
                         <input className="form-input" type="number" value={form.outgoingCalls} onChange={e => setForm({...form, outgoingCalls: e.target.value})} placeholder="0" min="0" required />
                       </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>3. Yangi lidlar</label>
+                        <input className="form-input" type="number" value={form.officeVisits} onChange={e => setForm({...form, officeVisits: e.target.value})} placeholder="0" min="0" required />
+                      </div>
                     </div>
-                    <div style={{ background: 'rgba(124,58,237,0.05)', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(124,58,237,0.1)', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Jami qo'ng'iroqlar</span>
-                      <span style={{ color: 'var(--primary-400)', fontSize: '18px', fontWeight: 950 }}>{totalCalls}</span>
-                    </div>
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Sifatli lidlar</label>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '20px' }}>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>4. Sifatli lidlar</label>
                         <input className="form-input" type="number" value={form.qualityLeads} onChange={e => setForm({...form, qualityLeads: e.target.value})} placeholder="0" min="0" required />
                       </div>
-                      <div className="form-group">
-                        <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Sifatsiz lidlar</label>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>5. Sifatsiz lidlar</label>
                         <input className="form-input" type="number" value={form.nonQualityLeads} onChange={e => setForm({...form, nonQualityLeads: e.target.value})} placeholder="0" min="0" required />
                       </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>6. Sotib olganlar</label>
+                        <input className="form-input" type="number" value={form.sales} onChange={e => setForm({...form, sales: e.target.value})} placeholder="0" min="0" required />
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>7. Summa (UZS)</label>
+                        <input className="form-input" type="number" value={form.revenue} onChange={e => setForm({...form, revenue: e.target.value})} placeholder="0" min="0" required />
+                      </div>
                     </div>
-                    <div className="form-group">
-                      <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' }}>Ofisga kelganlar (Uchrashuv)</label>
-                      <input className="form-input" type="number" value={form.officeVisits} onChange={e => setForm({...form, officeVisits: e.target.value})} placeholder="0" min="0" required />
-                    </div>
-                    {stages.length > 0 && (
-                      <div style={{ background: 'var(--bg-card-hover)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
-                        <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--primary-400)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '14px' }}>📊</span> Voronka bosqichlari (Jami Lidlar)
+
+                    {sources.length > 0 && (
+                      <div style={{ background: 'rgba(16,185,129,0.03)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+                        <div style={{ fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', color: '#10b981', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px', letterSpacing: '1px' }}>
+                          <span style={{ fontSize: '16px' }}>📣</span> Lid Manbalari
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: '12px' }}>
-                          {stages.map((s, i) => (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '12px' }}>
+                          {sources.map((s, i) => (
                             <div className="form-group" key={s.id} style={{ marginBottom: 0 }}>
-                              <label className="form-label" style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase' }}>{s.name}</label>
-                              <input className="form-input" type="number" value={leadStatuses[i]?.count || ''} onChange={e => updateLeadStatus(i, e.target.value)} placeholder="0" min="0" required />
+                              <label className="form-label" style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase' }}>{s.icon || '📱'} {s.name}</label>
+                              <input className="form-input" type="number" value={sourceStatuses[i]?.count || ''} onChange={e => updateSourceStatus(i, e.target.value)} placeholder="0" min="0" />
                             </div>
                           ))}
                         </div>
                       </div>
                     )}
-                    
-                    <div className="form-row" style={{ alignItems: 'flex-end' }}>
-                      <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', minHeight: '28px' }}>Sotib olganlar (Sotuv soni)</label>
-                        <input className="form-input" type="number" value={form.sales} onChange={e => setForm({...form, sales: e.target.value})} placeholder="0" min="0" required />
+
+                    {stages.length > 0 && (
+                      <div style={{ background: 'var(--bg-card-hover)', border: '1px solid var(--border-color)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '14px' }}>Qo'shimcha voronka bosqichlari</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '12px' }}>
+                          {stages.map((s, i) => (
+                            <div className="form-group" key={s.id} style={{ marginBottom: 0 }}>
+                              <label className="form-label" style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase' }}>{s.name}</label>
+                              <input className="form-input" type="number" value={leadStatuses[i]?.count || ''} onChange={e => updateLeadStatus(i, e.target.value)} placeholder="0" min="0" />
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label className="form-label" style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', minHeight: '28px' }}>Sotuvdan umumiy summa (UZS)</label>
-                        <input className="form-input" type="number" value={form.revenue} onChange={e => setForm({...form, revenue: e.target.value})} placeholder="0" min="0" required />
-                      </div>
-                    </div>
-                    <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '24px', fontSize: '11px', padding: '14px' }}>
+                    )}
+
+                    <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '8px', fontSize: '12px', padding: '16px' }}>
                       HISOBOTNI YUBORISH
                     </button>
                   </form>
                 )}
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '20px' }}>
                 {yesterdayReport ? (
-                  <div className="card glass-panel">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <div className="card glass-panel" style={{ padding: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                       <div style={{ fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Kechagi natijalar</div>
                       <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)', background: 'var(--bg-elevated)', padding: '4px 8px', borderRadius: '4px' }}>KECHA</span>
                     </div>
@@ -170,20 +190,19 @@ export default function ReportPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="card glass-panel">
-                    <div style={{ fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px' }}>Kechagi malumotlar</div>
+                  <div className="card glass-panel" style={{ padding: '20px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px' }}>Kechagi ma'lumotlar</div>
                     <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Kechagi hisobot topilmadi</div>
                   </div>
                 )}
 
-                {reports.length > 0 && (
-                  <div className="card glass-panel">
-                    <div style={{ fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '20px' }}>Haftalik o'rtacha</div>
+                {reports.length > 0 ? (
+                  <div className="card glass-panel" style={{ padding: '20px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '16px' }}>Haftalik o'rtacha</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                       {(() => {
                         const week = reports.slice(0, 7);
                         const avgCalls = Math.round(week.reduce((s, r) => s + r.totalCalls, 0) / week.length);
-                        const avgQuality = Math.round(week.reduce((s, r) => s + r.qualityLeads, 0) / week.length);
                         return <>
                           <div style={{ padding: '12px', background: 'var(--bg-elevated)', borderRadius: '12px', border: '1px solid var(--border)' }}>
                             <div style={{ fontSize: '20px', fontWeight: 900 }}>{avgCalls}</div>
@@ -197,7 +216,7 @@ export default function ReportPage() {
                       })()}
                     </div>
                   </div>
-                )}
+                ) : <div />}
               </div>
             </div>
           ) : (

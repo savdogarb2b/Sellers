@@ -13,14 +13,43 @@ function getUzbekistanToday() {
   return new Date(Date.UTC(uzNow.getUTCFullYear(), uzNow.getUTCMonth(), uzNow.getUTCDate()));
 }
 
+// Ikki nuqta orasidagi masofani hisoblash (metrda)
+function getDistanceMeters(lat1, lng1, lat2, lng2) {
+  const R = 6371000; // Yer radiusi metrda
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export async function POST(request) {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== 'EMPLOYEE') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const userId = session.user.id;
+  let body = {};
+  try { body = await request.json(); } catch {}
+  const { latitude, longitude } = body;
 
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  const user = await prisma.user.findUnique({ where: { id: userId }, include: { organization: true } });
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
+  // Lokatsiya tekshiruvi
+  const org = user.organization;
+  if (org?.locationLat && org?.locationLng && org?.locationRadius) {
+    if (!latitude || !longitude) {
+      return NextResponse.json({ error: 'Joylashuvingizni aniqlash kerak. GPS ni yoqing va qayta urinib ko\'ring.' }, { status: 400 });
+    }
+
+    const distance = Math.round(getDistanceMeters(org.locationLat, org.locationLng, latitude, longitude));
+    if (distance > org.locationRadius) {
+      return NextResponse.json({
+        error: `Siz ofisdan ${distance} metr uzoqdasiz. Ruxsat etilgan hudud: ${org.locationRadius} metr.`,
+        distance,
+        maxRadius: org.locationRadius,
+      }, { status: 403 });
+    }
+  }
 
   // Check if already checked in today (O'zbekiston vaqtida)
   const today = getUzbekistanToday();
@@ -32,6 +61,15 @@ export async function POST(request) {
   });
 
   if (existing) return NextResponse.json({ error: 'Bugun allaqachon keldingiz', attendance: existing }, { status: 400 });
+
+  // Tasdiqlangan ruxsat borligini tekshirish
+  const approvedLeave = await prisma.leaveRequest.findFirst({
+    where: {
+      userId,
+      date: { gte: today, lt: tomorrow },
+      status: 'TASDIQLANDI',
+    },
+  });
 
   // Check lateness
   const now = new Date();
@@ -58,21 +96,21 @@ export async function POST(request) {
     const thresholdMinutes = Math.max(0, user.latenessThreshold || 15);
     const lateDeadline = new Date(startTimeUTC.getTime() + thresholdMinutes * 60000);
 
-    // Threshold dan keyin kelgan = kechikkan
-    if (now > lateDeadline) {
+    // Threshold dan keyin kelgan = kechikkan (ruxsat bo'lmasa)
+    if (now > lateDeadline && !(approvedLeave && (approvedLeave.type === 'KECHIKISH' || approvedLeave.type === 'YARIM_KUN'))) {
       isLate = true;
       lateMinutes = Math.ceil((now - lateDeadline) / 60000);
       lateCountTotal = previousLateCount + 1;
 
       if (lateCountTotal < 3) {
-        // 1-2 marta: faqat ogohlantirish
         warningIssued = true;
         warningMessage = `${lateCountTotal}-kechikish (${lateMinutes} daq). Hozircha ogohlantirish berildi. 3-kechikishdan boshlab jarima yoziladi.`;
       } else {
-        // 3+ marta: jarima
         penaltyApplied = user.latenessPenalty || 0;
         warningMessage = `${lateCountTotal}-kechikish (${lateMinutes} daq). Jarima qo'llanildi: ${penaltyApplied} so'm.`;
       }
+    } else if (now > lateDeadline && approvedLeave) {
+      warningMessage = `Ruxsat tasdiqlangan (${approvedLeave.type === 'KECHIKISH' ? 'kechikish' : 'yarim kun'}). Jarima yozilmadi.`;
     }
   }
 

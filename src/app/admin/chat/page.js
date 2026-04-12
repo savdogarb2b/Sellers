@@ -65,7 +65,7 @@ export default function AdminChatPage() {
     setMessages(prev => [...prev, userMsgObj]);
 
     const aiMsgId = Date.now().toString();
-    setMessages(prev => [...prev, { id: aiMsgId, role: 'assistant', content: '', createdAt: new Date() }]);
+    setMessages(prev => [...prev, { id: aiMsgId, role: 'assistant', content: '', createdAt: new Date(), streaming: true }]);
     setSending(true);
 
     let targetSessionId = currentSessionId;
@@ -89,7 +89,11 @@ export default function AdminChatPage() {
         body: JSON.stringify({ message: userMsg, sessionId: targetSessionId }),
       });
 
-      if (!res.ok) throw new Error('Stream error');
+      if (!res.ok) {
+        let errMsg = 'Xatolik yuz berdi';
+        try { const errData = await res.json(); errMsg = errData.error || errMsg; } catch {}
+        throw new Error(errMsg);
+      }
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -99,10 +103,13 @@ export default function AdminChatPage() {
         const { done, value } = await reader.read();
         if (done) break;
         accumulatedContent += decoder.decode(value);
-        setMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: accumulatedContent } : m));
+        const snap = accumulatedContent;
+        setMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: snap } : m));
       }
+      // Streaming tugadi — markdown renderga o'tish
+      setMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, streaming: false } : m));
     } catch (err) {
-      setMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: 'Xatolik yuz berdi. Iltimos API kalitni tekshiring.' } : m));
+      setMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: err.message || 'Xatolik yuz berdi', streaming: false } : m));
     }
     setSending(false);
     inputRef.current?.focus();
@@ -123,23 +130,187 @@ export default function AdminChatPage() {
   };
 
   const downloadAsPDF = async (messageId) => {
-    const element = document.getElementById(`msg-${messageId}`);
-    if (!element) return;
-    
-    try {
-      const html2canvasModule = await import('html2canvas');
-      const html2canvas = html2canvasModule.default;
-      const { jsPDF } = await import('jspdf');
+    const msg = messages.find((m, i) => (m.id || i) === messageId);
+    if (!msg || !msg.content) return;
 
-      const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#111827' });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'px',
-        format: [canvas.width / 2, canvas.height / 2]
-      });
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
-      pdf.save(`AI_Tahlil_${new Date().toISOString().slice(0, 10)}.pdf`);
+    try {
+      const { jsPDF } = await import('jspdf');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageW = 210;
+      const pageH = 297;
+      const margin = 20;
+      const contentW = pageW - margin * 2;
+      let y = margin;
+
+      const addPage = () => { pdf.addPage(); y = margin; };
+      const checkPage = (need = 15) => { if (y + need > pageH - margin) addPage(); };
+
+      // ─── HEADER ───
+      pdf.setFillColor(124, 58, 237);
+      pdf.rect(0, 0, pageW, 40, 'F');
+      pdf.setFillColor(99, 46, 190);
+      pdf.rect(0, 36, pageW, 4, 'F');
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(18);
+      pdf.text('SalesCRM', margin, 18);
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('AI Tahlil Hisoboti', margin, 26);
+
+      pdf.setFontSize(9);
+      pdf.text(new Date().toLocaleDateString('uz-UZ', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }), pageW - margin, 18, { align: 'right' });
+      pdf.text('Executive AI Analytics', pageW - margin, 26, { align: 'right' });
+
+      y = 50;
+
+      // ─── SAVOL (agar bor bo'lsa) ───
+      const userMsgIdx = messages.findIndex((m, i) => (m.id || i) === messageId) - 1;
+      if (userMsgIdx >= 0 && messages[userMsgIdx]?.role === 'user') {
+        pdf.setFillColor(245, 245, 250);
+        pdf.roundedRect(margin, y, contentW, 16, 3, 3, 'F');
+        pdf.setDrawColor(124, 58, 237);
+        pdf.setLineWidth(0.5);
+        pdf.line(margin, y, margin, y + 16);
+
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(124, 58, 237);
+        pdf.setFontSize(8);
+        pdf.text('SAVOL:', margin + 4, y + 5);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(50, 50, 50);
+        pdf.setFontSize(10);
+        const qLines = pdf.splitTextToSize(messages[userMsgIdx].content, contentW - 10);
+        pdf.text(qLines.slice(0, 2), margin + 4, y + 11);
+        y += 22;
+      }
+
+      // ─── CONTENT ───
+      const rawText = msg.content || '';
+      const lines = rawText.split('\n');
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) { y += 4; continue; }
+
+        checkPage(12);
+
+        // Sarlavha (### ## #)
+        if (trimmed.startsWith('###')) {
+          y += 4;
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(80, 80, 80);
+          pdf.setFontSize(11);
+          const text = trimmed.replace(/^#{1,3}\s*/, '').replace(/\*\*/g, '');
+          pdf.text(text, margin, y);
+          y += 6;
+          pdf.setDrawColor(124, 58, 237);
+          pdf.setLineWidth(0.3);
+          pdf.line(margin, y, margin + 30, y);
+          y += 4;
+        } else if (trimmed.startsWith('##')) {
+          y += 5;
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(60, 60, 60);
+          pdf.setFontSize(13);
+          const text = trimmed.replace(/^#{1,2}\s*/, '').replace(/\*\*/g, '');
+          pdf.text(text, margin, y);
+          y += 7;
+          pdf.setDrawColor(124, 58, 237);
+          pdf.setLineWidth(0.5);
+          pdf.line(margin, y, margin + 50, y);
+          y += 5;
+        } else if (trimmed.startsWith('#')) {
+          y += 6;
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(40, 40, 40);
+          pdf.setFontSize(15);
+          const text = trimmed.replace(/^#\s*/, '').replace(/\*\*/g, '');
+          pdf.text(text, margin, y);
+          y += 8;
+          pdf.setDrawColor(124, 58, 237);
+          pdf.setLineWidth(0.8);
+          pdf.line(margin, y, pageW - margin, y);
+          y += 6;
+        }
+        // Ro'yxat (- yoki * yoki raqam)
+        else if (/^[-*•]\s/.test(trimmed) || /^\d+[.)]\s/.test(trimmed)) {
+          const text = trimmed.replace(/^[-*•]\s*/, '').replace(/^\d+[.)]\s*/, '').replace(/\*\*/g, '');
+          pdf.setFillColor(124, 58, 237);
+          pdf.circle(margin + 2, y - 1.2, 1, 'F');
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(50, 50, 50);
+          pdf.setFontSize(10);
+          const wrapped = pdf.splitTextToSize(text, contentW - 10);
+          for (const wl of wrapped) {
+            checkPage(6);
+            pdf.text(wl, margin + 6, y);
+            y += 5;
+          }
+          y += 1;
+        }
+        // Jadval (|)
+        else if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+          if (trimmed.includes('---')) continue;
+          const cells = trimmed.split('|').filter(c => c.trim()).map(c => c.trim().replace(/\*\*/g, ''));
+          const colW = contentW / cells.length;
+
+          checkPage(10);
+          const isHeader = lines[lines.indexOf(line) + 1]?.includes('---');
+
+          if (isHeader) {
+            pdf.setFillColor(124, 58, 237);
+            pdf.rect(margin, y - 4, contentW, 8, 'F');
+            pdf.setFont('helvetica', 'bold');
+            pdf.setTextColor(255, 255, 255);
+            pdf.setFontSize(8);
+          } else {
+            pdf.setFillColor(y % 2 === 0 ? 250 : 245, y % 2 === 0 ? 250 : 245, y % 2 === 0 ? 255 : 250);
+            pdf.rect(margin, y - 4, contentW, 8, 'F');
+            pdf.setFont('helvetica', 'normal');
+            pdf.setTextColor(50, 50, 50);
+            pdf.setFontSize(8);
+          }
+
+          cells.forEach((cell, ci) => {
+            const cellText = pdf.splitTextToSize(cell, colW - 4);
+            pdf.text(cellText[0] || '', margin + ci * colW + 2, y);
+          });
+          y += 7;
+        }
+        // Oddiy matn
+        else {
+          const cleanText = trimmed.replace(/\*\*/g, '');
+          const hasBold = trimmed.includes('**');
+          pdf.setFont('helvetica', hasBold ? 'bold' : 'normal');
+          pdf.setTextColor(50, 50, 50);
+          pdf.setFontSize(10);
+          const wrapped = pdf.splitTextToSize(cleanText, contentW);
+          for (const wl of wrapped) {
+            checkPage(6);
+            pdf.text(wl, margin, y);
+            y += 5;
+          }
+          y += 2;
+        }
+      }
+
+      // ─── FOOTER ───
+      const totalPages = pdf.getNumberOfPages();
+      for (let p = 1; p <= totalPages; p++) {
+        pdf.setPage(p);
+        pdf.setDrawColor(200, 200, 210);
+        pdf.setLineWidth(0.3);
+        pdf.line(margin, pageH - 15, pageW - margin, pageH - 15);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(150, 150, 160);
+        pdf.setFontSize(8);
+        pdf.text('SalesCRM — AI Tahlil Hisoboti', margin, pageH - 10);
+        pdf.text(`${p} / ${totalPages}`, pageW - margin, pageH - 10, { align: 'right' });
+      }
+
+      pdf.save(`SalesCRM_Tahlil_${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (e) {
       console.error('PDF xatosi', e);
       alert('PDF yuklashda xatolik yuz berdi');
@@ -337,18 +508,25 @@ export default function AdminChatPage() {
                       
                       {m.role === 'assistant' ? (
                         <div className="claude-prose" style={{ width: '100%' }}>
-                          <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
-                            code({ node, inline, className, children, ...props }) {
-                              const match = /language-(\w+)/.exec(className || '');
-                              const content = String(children).replace(/\n$/, '');
-                              if (!inline && (match?.[1] === 'chart' || (content.startsWith('{') && content.includes('"type"')))) {
-                                return <ChartRenderer jsonStr={content} />;
+                          {m.streaming ? (
+                            <div style={{ fontSize: '15px', lineHeight: '1.8', whiteSpace: 'pre-wrap', color: 'var(--text)' }}>
+                              {m.content}
+                              <span style={{ display: 'inline-block', width: '6px', height: '18px', background: 'var(--primary-400)', marginLeft: '2px', borderRadius: '1px', animation: 'blink 0.8s infinite' }} />
+                            </div>
+                          ) : (
+                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
+                              code({ node, inline, className, children, ...props }) {
+                                const match = /language-(\w+)/.exec(className || '');
+                                const content = String(children).replace(/\n$/, '');
+                                if (!inline && (match?.[1] === 'chart' || (content.startsWith('{') && content.includes('"type"')))) {
+                                  return <ChartRenderer jsonStr={content} />;
+                                }
+                                return <code className={`inline-code ${className || ''}`} {...props}>{children}</code>;
                               }
-                              return <code className={`inline-code ${className || ''}`} {...props}>{children}</code>;
-                            }
-                          }}>
-                            {m.content || ' '}
-                          </ReactMarkdown>
+                            }}>
+                              {m.content || ' '}
+                            </ReactMarkdown>
+                          )}
                         </div>
                       ) : (
                         <div style={{
@@ -365,20 +543,6 @@ export default function AdminChatPage() {
                   </div>
                 </div>
               ))}
-              {sending && (
-                <div style={{ width: '100%', padding: '24px 20px', background: 'transparent' }}>
-                  <div style={{ maxWidth: '850px', margin: '0 auto', display: 'flex', gap: '20px' }}>
-                    <div style={{ flexShrink: 0, marginTop: '2px' }}>
-                      <div style={{ width: 32, height: 32, borderRadius: '8px', background: 'linear-gradient(135deg, var(--primary-500), var(--primary-600))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-                        <Bot size={18} />
-                      </div>
-                    </div>
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', height: '32px' }}>
-                      <div className="typing-pulse" />
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>

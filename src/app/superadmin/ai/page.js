@@ -75,8 +75,8 @@ export default function SuperadminAIPage() {
     setMessages(prev => [...prev, userMsgObj]);
     
     const aiMsgId = Date.now().toString();
-    setMessages(prev => [...prev, { id: aiMsgId, role: 'assistant', content: '', createdAt: new Date() }]);
-    
+    setMessages(prev => [...prev, { id: aiMsgId, role: 'assistant', content: '', createdAt: new Date(), streaming: true }]);
+
     setSending(true);
 
     let targetSessionId = currentSessionId;
@@ -104,7 +104,11 @@ export default function SuperadminAIPage() {
         }),
       });
 
-      if (!res.ok) throw new Error('Stream error');
+      if (!res.ok) {
+        let errMsg = 'Xatolik yuz berdi';
+        try { const errData = await res.json(); errMsg = errData.error || errMsg; } catch {}
+        throw new Error(errMsg);
+      }
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -116,14 +120,16 @@ export default function SuperadminAIPage() {
 
         const chunk = decoder.decode(value);
         accumulatedContent += chunk;
+        const snap = accumulatedContent;
 
-        setMessages(prev => prev.map(m => 
-          m.id === aiMsgId ? { ...m, content: accumulatedContent } : m
+        setMessages(prev => prev.map(m =>
+          m.id === aiMsgId ? { ...m, content: snap } : m
         ));
       }
+      setMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, streaming: false } : m));
     } catch (err) {
-      setMessages(prev => prev.map(m => 
-        m.id === aiMsgId ? { ...m, content: 'Xatolik yuz berdi. Iltimos qayta urinib ko\'ring.' } : m
+      setMessages(prev => prev.map(m =>
+        m.id === aiMsgId ? { ...m, content: 'Xatolik yuz berdi. Iltimos qayta urinib ko\'ring.', streaming: false } : m
       ));
     }
     setSending(false);
@@ -325,18 +331,25 @@ export default function SuperadminAIPage() {
                       
                       {m.role === 'assistant' ? (
                         <div className="claude-prose" style={{ width: '100%' }}>
-                          <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
-                            code({ node, inline, className, children, ...props }) {
-                              const match = /language-(\w+)/.exec(className || '');
-                              const content = String(children).replace(/\n$/, '');
-                              if (!inline && (match?.[1] === 'chart' || (content.startsWith('{') && content.includes('"type"')))) {
-                                return <ChartRenderer jsonStr={content} />;
+                          {m.streaming ? (
+                            <div style={{ fontSize: '15px', lineHeight: '1.8', whiteSpace: 'pre-wrap', color: 'var(--text)' }}>
+                              {m.content}
+                              <span style={{ display: 'inline-block', width: '6px', height: '18px', background: 'var(--primary-400)', marginLeft: '2px', borderRadius: '1px', animation: 'blink 0.8s infinite' }} />
+                            </div>
+                          ) : (
+                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
+                              code({ node, inline, className, children, ...props }) {
+                                const match = /language-(\w+)/.exec(className || '');
+                                const content = String(children).replace(/\n$/, '');
+                                if (!inline && (match?.[1] === 'chart' || (content.startsWith('{') && content.includes('"type"')))) {
+                                  return <ChartRenderer jsonStr={content} />;
+                                }
+                                return <code className={`inline-code ${className || ''}`} {...props}>{children}</code>;
                               }
-                              return <code className={`inline-code ${className || ''}`} {...props}>{children}</code>;
-                            }
-                          }}>
-                            {m.content || ' '}
-                          </ReactMarkdown>
+                            }}>
+                              {m.content || ' '}
+                            </ReactMarkdown>
+                          )}
                         </div>
                       ) : (
                         <div style={{

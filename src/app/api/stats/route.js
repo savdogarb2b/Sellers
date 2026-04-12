@@ -67,7 +67,7 @@ export async function GET(request) {
   const employees = await prisma.user.findMany({
     where: { organizationId: orgId, role: 'EMPLOYEE' },
     include: {
-      dailyReports: { include: { leadStatuses: true } },
+      dailyReports: { include: { leadStatuses: true, sourceStatuses: { include: { source: true } } } },
       penaltyRecords: true,
       bonusRecords: true,
       kpis: true,
@@ -77,6 +77,7 @@ export async function GET(request) {
 
   const totalEmployees = employees.length;
   const allReports = employees.flatMap(e => e.dailyReports);
+  const sumNewLeads = (reports) => reports.reduce((sum, report) => sum + (report.officeVisits || 0), 0);
   const sumLeads = (reports) => reports.reduce((sum, report) => sum + (report.qualityLeads || 0), 0);
   const sumSales = (reports) => reports.reduce((sum, report) => sum + (report.sales || 0), 0);
   const sumRevenue = (reports) => reports.reduce((sum, report) => sum + (report.revenue || 0), 0);
@@ -92,6 +93,7 @@ export async function GET(request) {
   // ---- SOTUV ----
   const totalSales = sumSales(filteredReports);
   const totalCalls = filteredReports.reduce((sum, r) => sum + r.totalCalls, 0);
+  const totalNewLeads = sumNewLeads(filteredReports);
   const totalQualityLeads = sumLeads(filteredReports);
   const totalLeads = totalQualityLeads;
   const avgConversion = toPercent(totalSales, totalQualityLeads);
@@ -297,6 +299,31 @@ export async function GET(request) {
     };
   });
 
+  // ---- ASOSIY VORONKA (7 ta o'zgarmas bosqich) ----
+  const totalIncoming = filteredReports.reduce((s, r) => s + (r.incomingCalls || 0), 0);
+  const totalOutgoing = filteredReports.reduce((s, r) => s + (r.outgoingCalls || 0), 0);
+  const totalNonQualityLeads = filteredReports.reduce((s, r) => s + (r.nonQualityLeads || 0), 0);
+
+  const mainFunnel = [
+    { name: 'Kiruvchi qo\'ng\'iroq', count: totalIncoming },
+    { name: 'Zadacha', count: totalOutgoing },
+    { name: 'Yangi lidlar', count: totalNewLeads },
+    { name: 'Sifatli lidlar', count: totalQualityLeads },
+    { name: 'Sifatsiz lidlar', count: totalNonQualityLeads },
+    { name: 'Sotib olganlar', count: totalSales },
+  ].map((stage, i, arr) => {
+    if (i === 0) return { ...stage, conversionFromPrev: 100, dropOffPercent: 0 };
+    const prev = arr[i - 1].count;
+    const conv = prev > 0 ? Math.round((stage.count / prev) * 1000) / 10 : 0;
+    const drop = prev > 0 ? Math.round((Math.max(prev - stage.count, 0) / prev) * 1000) / 10 : 0;
+    return { ...stage, conversionFromPrev: Math.min(conv, 100), dropOffPercent: drop };
+  });
+
+  const mainWeakestStage = mainFunnel.slice(1).filter(s => s.count > 0 || mainFunnel[0].count > 0).reduce((lowest, stage) => {
+    if (!lowest) return stage;
+    return stage.conversionFromPrev < lowest.conversionFromPrev ? stage : lowest;
+  }, null);
+
   const weakestStage = funnelStageAnalytics.slice(1).reduce((lowest, stage) => {
     if (!lowest) return stage;
     return stage.conversionFromPrev < lowest.conversionFromPrev ? stage : lowest;
@@ -325,6 +352,7 @@ export async function GET(request) {
 
     // Sotuv
     totalSales,
+    totalNewLeads,
     totalQualityLeads,
     totalCalls,
     totalLeads,
@@ -377,6 +405,26 @@ export async function GET(request) {
     funnelDistribution,
     funnelStageAnalytics,
     weakestStage,
+
+    // Asosiy voronka (7 ta o'zgarmas)
+    mainFunnel,
+    mainWeakestStage,
+
+    // Lid manbalari statistikasi
+    sourceStats: (() => {
+      const sourceMap = {};
+      filteredReports.forEach(r => {
+        if (r.sourceStatuses) {
+          r.sourceStatuses.forEach(ss => {
+            const name = ss.source?.name || 'Noma\'lum';
+            const icon = ss.source?.icon || '📱';
+            if (!sourceMap[name]) sourceMap[name] = { name, icon, count: 0 };
+            sourceMap[name].count += ss.count || 0;
+          });
+        }
+      });
+      return Object.values(sourceMap).sort((a, b) => b.count - a.count);
+    })(),
 
     // Conversion dashboard
     employeeConversions,

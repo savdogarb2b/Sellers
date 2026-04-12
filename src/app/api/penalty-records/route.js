@@ -53,6 +53,39 @@ export async function POST(request) {
   }
 }
 
+// PUT — admin jarimani tahrirlaydi
+export async function PUT(request) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== 'ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  try {
+    const { id, reason, amount } = await request.json();
+    if (!id) return NextResponse.json({ error: 'ID kerak' }, { status: 400 });
+
+    const record = await prisma.penaltyRecord.findFirst({
+      where: { id, user: { organizationId: session.user.organizationId } },
+    });
+    if (!record) return NextResponse.json({ error: 'Topilmadi' }, { status: 404 });
+
+    const data = {};
+    if (reason !== undefined) data.reason = reason.trim();
+    if (amount !== undefined) {
+      const parsed = parseFloat(amount);
+      if (isNaN(parsed) || parsed < 0) return NextResponse.json({ error: 'Summa noto\'g\'ri' }, { status: 400 });
+      data.amount = parsed;
+    }
+
+    const updated = await prisma.penaltyRecord.update({
+      where: { id },
+      data,
+      include: { user: { select: { name: true } } },
+    });
+    return NextResponse.json(updated);
+  } catch (err) {
+    return NextResponse.json({ error: 'Tahrirlashda xatolik' }, { status: 500 });
+  }
+}
+
 export async function DELETE(request) {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== 'ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
