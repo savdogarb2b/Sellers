@@ -9,7 +9,8 @@ export async function PUT(request, { params }) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const id = params.id;
+  // Next.js 15+ versions (or similar dev builds) require awaiting params in dynamic routes
+  const { id } = await params;
   const data = await request.json();
 
   try {
@@ -35,7 +36,8 @@ export async function PUT(request, { params }) {
       officeVisits,
       sales,
       revenue,
-      leadStatuses
+      leadStatuses,
+      sourceStatuses
     } = data;
 
     const updatedReport = await prisma.dailyReport.update({
@@ -56,13 +58,25 @@ export async function PUT(request, { params }) {
             count: parseInt(ls.count) || 0,
           })) || [],
         },
+        // Handle sourceStatuses update to prevent data loss or support future editing
+        sourceStatuses: sourceStatuses ? {
+          deleteMany: {},
+          create: sourceStatuses.map(ss => ({
+            sourceId: ss.sourceId,
+            count: parseInt(ss.count) || 0,
+          })),
+        } : undefined,
       },
-      include: { leadStatuses: { include: { stage: true } }, user: { select: { id: true, name: true } } },
+      include: { 
+        leadStatuses: { include: { stage: true } }, 
+        sourceStatuses: { include: { source: true } },
+        user: { select: { id: true, name: true } } 
+      },
     });
 
     return NextResponse.json(updatedReport);
   } catch (error) {
     console.error('Error updating report:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
   }
 }

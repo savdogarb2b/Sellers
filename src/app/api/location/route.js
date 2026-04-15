@@ -25,7 +25,10 @@ export async function POST(request) {
 
   const { lat, lng, radius } = await request.json();
 
-  if (!lat || !lng) return NextResponse.json({ error: 'Koordinatalar kerak' }, { status: 400 });
+  if (lat === undefined || lat === null || lng === undefined || lng === null) {
+    return NextResponse.json({ error: 'Koordinatalar kerak' }, { status: 400 });
+  }
+  
   if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
     return NextResponse.json({ error: 'Koordinatalar noto\'g\'ri' }, { status: 400 });
   }

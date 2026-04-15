@@ -120,16 +120,24 @@ export default function AdminLocationPage() {
   }, [location.lat, location.lng, location.radius, updateMapMarker]);
 
   const handleSave = async () => {
-    if (!location.lat || !location.lng) return;
+    if (location.lat === null || location.lng === null) return;
     setSaving(true);
-    const res = await fetch('/api/location', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(location),
-    });
-    if (res.ok) {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+    try {
+      const res = await fetch('/api/location', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(location),
+      });
+      if (res.ok) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      } else {
+        const error = await res.json();
+        alert(error.error || "Saqlashda xatolik yuz berdi");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Server bilan bog'lanishda xatolik");
     }
     setSaving(false);
   };
@@ -215,7 +223,7 @@ export default function AdminLocationPage() {
               </span>
             </div>
 
-            <button onClick={handleSave} disabled={saving || !location.lat || !location.lng} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '16px', padding: '14px', fontSize: '12px' }}>
+            <button onClick={handleSave} disabled={saving || location.lat === null || location.lng === null} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '16px', padding: '14px', fontSize: '12px' }}>
               {saving ? 'SAQLANMOQDA...' : 'SAQLASH'}
             </button>
           </div>
