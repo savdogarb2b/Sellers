@@ -88,74 +88,96 @@ const superadminGroups = [
 ];
 
 const adminGroups = [
+  /* ── 1. UMUMIY ── */
   {
-    key: 'core',
-    title: 'Boshqaruv',
+    key: 'overview',
+    title: 'Umumiy',
     icon: I.layout,
     items: [
-      { href: '/admin',           label: 'Dashboard',         icon: I.home  },
-      { href: '/admin/employees', label: 'Xodimlar',          icon: I.users },
+      { href: '/admin', label: 'Bosh Sahifa', icon: I.home },
     ],
   },
+  /* ── 2. XODIMLAR ── */
+  {
+    key: 'hr',
+    title: 'Xodimlar',
+    icon: I.users,
+    items: [
+      { href: '/admin/employees', label: "Xodimlar Ro'yxati", icon: I.users     },
+      { href: '/admin/ratings',   label: 'Reyting & KPI',     icon: I.trophy    },
+      { href: '/admin/leave',     label: 'Dam Olish & Ruxsat', icon: I.clipboard },
+    ],
+  },
+  /* ── 3. SOTUV & CRM ── */
   {
     key: 'sales',
-    title: 'Sotuv Bo\'limi',
+    title: 'Sotuv & CRM',
     icon: I.trending,
     items: [
-      { href: '/admin/strategy', label: 'Sotuv Rejasi',      icon: I.target    },
-      { href: '/admin/funnel',   label: 'Sotuv Voronkasi',   icon: I.funnel    },
-      { href: '/admin/sources', label: 'Lid Manbalari',    icon: I.target    },
-      { href: '/admin/reports',  label: 'Kunlik Hisobotlar', icon: I.clipboard },
-      { href: '/admin/feedback', label: 'Taklif & Shikoyat', icon: I.chatAI   },
+      { href: '/admin/strategy', label: 'Sotuv Strategiyasi',  icon: I.target    },
+      { href: '/admin/funnel',   label: 'Voronka Bosqichlari', icon: I.funnel    },
+      { href: '/admin/sources',  label: 'Lid Manbalari',       icon: I.sparkle   },
+      { href: '/admin/reports',  label: 'Kunlik Hisobotlar',   icon: I.clipboard },
+      { href: '/admin/feedback', label: 'Mijoz Fikrlari',      icon: I.chatAI    },
     ],
   },
+  /* ── 4. MOLIYA ── */
   {
     key: 'finance',
     title: 'Moliya',
     icon: I.wallet,
     items: [
-      { href: '/admin/salary',    label: 'Ish Haqlar',      icon: I.coin   },
-      { href: '/admin/penalties', label: 'Jarimalar',       icon: I.alertX },
-      { href: '/admin/bonuses',   label: 'Bonuslar',        icon: I.gift   },
-      { href: '/admin/finance',   label: 'Jarima & Bonus',  icon: I.scale  },
-      { href: '/admin/leave',     label: 'Ruxsat & Jarimalar', icon: I.clipboard },
+      { href: '/admin/salary',    label: 'Ish Haqlari',    icon: I.coin   },
+      { href: '/admin/bonuses',   label: 'Bonuslar',       icon: I.gift   },
+      { href: '/admin/penalties', label: 'Jarimalar',      icon: I.alertX },
+      { href: '/admin/finance',   label: 'Umumiy Hisobot', icon: I.scale  },
     ],
   },
+  /* ── 5. TIZIM ── */
   {
-    key: 'analytics',
-    title: 'Tahlil',
-    icon: I.chartBar,
+    key: 'system',
+    title: 'Tizim',
+    icon: I.shield,
     items: [
-      { href: '/admin/ratings',  label: 'Reyting',     icon: I.trophy  },
-      { href: '/admin/chat',     label: 'AI Intellect', icon: I.sparkle },
-      { href: '/admin/location', label: 'Ofis Joylashuvi', icon: I.mapPin },
-      { href: '/admin/settings', label: 'Sozlamalar',   icon: I.sliders },
+      { href: '/admin/chat',     label: 'AI Maslahat',     icon: I.brain   },
+      { href: '/admin/location', label: 'Ofis Joylashuvi', icon: I.mapPin  },
+      { href: '/admin/settings', label: 'Sozlamalar',      icon: I.sliders },
     ],
   },
 ];
 
 const employeeGroups = [
+  /* ── 1. ISH JOYI ── */
   {
-    key: 'daily',
-    title: 'Kunlik',
+    key: 'workplace',
+    title: 'Ish Joyi',
     icon: I.briefcase,
     items: [
-      { href: '/employee',          label: 'Dashboard',         icon: I.home      },
-      { href: '/employee/checkin',  label: 'Nazorat Punkti',    icon: I.mapPin    },
-      { href: '/employee/report',   label: 'Hisobot Yozish',    icon: I.fileEdit  },
-      { href: '/employee/feedback', label: 'Taklif & Shikoyat', icon: I.chatAI   },
-      { href: '/employee/leave',    label: 'Ruxsat So\'rash',   icon: I.clipboard },
+      { href: '/employee',         label: 'Bosh Sahifa',     icon: I.home     },
+      { href: '/employee/checkin', label: 'Kirish / Chiqish', icon: I.mapPin  },
+      { href: '/employee/report',  label: 'Hisobot Yozish',  icon: I.fileEdit },
     ],
   },
+  /* ── 2. SO'ROVLAR ── */
+  {
+    key: 'requests',
+    title: "So'rovlar",
+    icon: I.clipboard,
+    items: [
+      { href: '/employee/leave',    label: "Ruxsat So'rash",  icon: I.clipboard },
+      { href: '/employee/feedback', label: 'Taklif & Shikoyat', icon: I.chatAI },
+    ],
+  },
+  /* ── 3. NATIJALARIM ── */
   {
     key: 'performance',
-    title: 'Natijalar',
+    title: 'Natijalarim',
     icon: I.star,
     items: [
-      { href: '/employee/kpi',      label: 'KPI',          icon: I.kpi     },
-      { href: '/employee/salary',   label: 'Ish Haqi',     icon: I.payslip },
-      { href: '/employee/ratings',  label: 'Reyting',      icon: I.medal   },
-      { href: '/employee/chat',     label: 'AI Assistent', icon: I.chatAI  },
+      { href: '/employee/kpi',     label: "KPI Ko'rsatkichlar", icon: I.kpi     },
+      { href: '/employee/salary',  label: 'Ish Haqi',           icon: I.payslip },
+      { href: '/employee/ratings', label: 'Reyting',            icon: I.medal   },
+      { href: '/employee/chat',    label: 'AI Assistent',       icon: I.sparkle },
     ],
   },
 ];
