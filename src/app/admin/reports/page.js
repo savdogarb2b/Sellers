@@ -252,29 +252,34 @@ export default function AdminReportsPage() {
                 <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>Tanlangan davrda yoki xodim bo'yicha ma'lumot yo'q</p>
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
+              <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 320px)' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1000px' }}>
-                  <thead>
-                    <tr style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                      <th style={thStyle}>Sana</th>
-                      <th style={thStyle}>Hafta kuni</th>
-                      <th style={{ ...thStyle, background: 'rgba(184, 134, 11, 0.1)', color: '#daa520' }}>Jami q-roq</th>
-                      <th style={{ ...thStyle, background: 'rgba(30, 144, 255, 0.1)', color: '#1e90ff' }}>Kiruvchi</th>
-                      <th style={{ ...thStyle, background: 'rgba(30, 144, 255, 0.1)', color: '#1e90ff' }}>Zadacha</th>
-                      <th style={{ ...thStyle, background: 'rgba(50, 205, 50, 0.1)', color: '#32cd32' }}>Sifatli</th>
-                      <th style={{ ...thStyle, background: 'rgba(220, 20, 60, 0.1)', color: '#dc143c' }}>Sifatsiz</th>
+                  <thead style={{ position: 'sticky', top: 0, zIndex: 30 }}>
+                    <tr style={{ background: '#111114', borderBottom: '2px solid rgba(255,255,255,0.12)' }}>
+                      {/* Sticky left: Xodim */}
+                      {selectedEmployeeId === 'all' && (
+                        <th style={{ ...thStyle, ...stickyColStyle(0), background: '#111114', minWidth: '120px' }}>Xodim</th>
+                      )}
+                      {/* Sticky left: Sana */}
+                      <th style={{ ...thStyle, ...stickyColStyle(selectedEmployeeId === 'all' ? 120 : 0), background: '#111114', minWidth: '90px' }}>Sana</th>
+                      <th style={{ ...thStyle, background: '#111114', minWidth: '90px' }}>Hafta kuni</th>
+                      <th style={{ ...thStyle, background: 'rgba(184, 134, 11, 0.25)', color: '#daa520' }}>Jami q-roq</th>
+                      <th style={{ ...thStyle, background: 'rgba(30, 144, 255, 0.15)', color: '#1e90ff' }}>Kiruvchi</th>
+                      <th style={{ ...thStyle, background: 'rgba(30, 144, 255, 0.15)', color: '#1e90ff' }}>Zadacha</th>
+                      <th style={{ ...thStyle, background: 'rgba(50, 205, 50, 0.15)', color: '#32cd32' }}>Sifatli</th>
+                      <th style={{ ...thStyle, background: 'rgba(220, 20, 60, 0.15)', color: '#dc143c' }}>Sifatsiz</th>
                       
                       {/* Dynamic Funnel Stages */}
                       {stages.map(stage => (
-                        <th key={stage.id} style={{ ...thStyle, background: 'rgba(255,255,255,0.02)', color: 'var(--primary-400)', minWidth: '80px' }}>
+                        <th key={stage.id} style={{ ...thStyle, background: 'rgba(124, 58, 237, 0.12)', color: 'var(--primary-400)', minWidth: '90px' }}>
                           {stage.name}
                         </th>
                       ))}
 
-                      <th style={{ ...thStyle, background: 'rgba(255, 69, 0, 0.1)', color: '#ff4500' }}>Ofis (K)</th>
-                      <th style={{ ...thStyle, background: 'rgba(0, 206, 209, 0.1)', color: '#00ced1' }}>Sotuv (T)</th>
-                      <th style={{ ...thStyle, background: 'rgba(138, 43, 226, 0.1)', color: '#8a2be2' }}>Summa (UZS)</th>
-                      <th style={thStyle}></th>
+                      <th style={{ ...thStyle, background: 'rgba(255, 69, 0, 0.15)', color: '#ff4500' }}>Ofis (K)</th>
+                      <th style={{ ...thStyle, background: 'rgba(0, 206, 209, 0.15)', color: '#00ced1' }}>Sotuv (T)</th>
+                      <th style={{ ...thStyle, background: 'rgba(138, 43, 226, 0.15)', color: '#8a2be2', minWidth: '120px' }}>Summa (UZS)</th>
+                      <th style={{ ...thStyle, background: '#111114' }}></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -289,19 +294,32 @@ export default function AdminReportsPage() {
                         const sales = item.reports.reduce((s, r) => s + r.sales, 0);
                         const revenue = item.reports.reduce((s, r) => s + r.revenue, 0);
 
+                        const summaryBg = item.isGrand
+                          ? 'rgba(50, 205, 50, 0.12)'
+                          : 'rgba(30, 144, 255, 0.08)';
+                        const summaryBorder = item.isGrand
+                          ? '2px solid rgba(50,205,50,0.4)'
+                          : '1px solid rgba(30,144,255,0.2)';
                         return (
                           <tr key={`sum-${idx}`} style={{ 
-                            background: item.isGrand ? 'rgba(50, 205, 50, 0.15)' : 'rgba(30, 144, 255, 0.1)', 
+                            background: summaryBg,
                             fontWeight: 900,
-                            borderTop: '2px solid rgba(255,255,255,0.1)',
-                            borderBottom: item.isGrand ? 'none' : '2px solid rgba(255,255,255,0.1)'
+                            borderTop: summaryBorder,
+                            borderBottom: summaryBorder,
                           }}>
-                            <td colSpan={2} style={{ ...tdStyle, textAlign: 'right', fontSize: '11px', color: 'var(--text-primary)' }}>{item.label}</td>
-                            <td style={tdStyle}>{totalCalls}</td>
+                            {selectedEmployeeId === 'all' && (
+                              <td style={{ ...tdStyle, ...stickyColStyle(0), background: summaryBg, fontSize: '10px', color: 'var(--text-muted)' }}></td>
+                            )}
+                            {/* Sticky Sana col for summary label */}
+                            <td style={{ ...tdStyle, ...stickyColStyle(selectedEmployeeId === 'all' ? 120 : 0), background: summaryBg, textAlign: 'right', fontSize: '10px', fontWeight: 900, color: item.isGrand ? '#32cd32' : '#1e90ff', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
+                              {item.label}
+                            </td>
+                            <td style={tdStyle}></td>
+                            <td style={{ ...tdStyle, fontWeight: 900 }}>{totalCalls}</td>
                             <td style={tdStyle}>{incoming}</td>
                             <td style={tdStyle}>{outgoing}</td>
-                            <td style={tdStyle}>{quality}</td>
-                            <td style={tdStyle}>{nonQuality}</td>
+                            <td style={{ ...tdStyle, color: '#32cd32' }}>{quality}</td>
+                            <td style={{ ...tdStyle, color: '#dc143c' }}>{nonQuality}</td>
                             
                             {/* Dynamic Funnel Totals */}
                             {stages.map(stage => {
@@ -309,41 +327,56 @@ export default function AdminReportsPage() {
                                 const ls = r.leadStatuses?.find(ls => ls.stageId === stage.id);
                                 return s + (ls ? ls.count : 0);
                               }, 0);
-                              return <td key={stage.id} style={tdStyle}>{stageTotal}</td>;
+                              return <td key={stage.id} style={{ ...tdStyle, color: 'var(--primary-400)' }}>{stageTotal}</td>;
                             })}
 
                             <td style={tdStyle}>{visits}</td>
-                            <td style={tdStyle}>{sales}</td>
-                            <td style={{ ...tdStyle, color: item.isGrand ? 'var(--accent-teal)' : 'inherit' }}>{formatCurrency(revenue)}</td>
+                            <td style={{ ...tdStyle, color: '#00ced1' }}>{sales}</td>
+                            <td style={{ ...tdStyle, color: item.isGrand ? '#10b981' : 'inherit', fontSize: item.isGrand ? '13px' : '12px' }}>{formatCurrency(revenue)}</td>
                             <td style={tdStyle}></td>
                           </tr>
                         );
                       }
 
+                      const rowBg = idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)';
                       return (
-                        <tr key={item.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', height: '45px' }}>
-                          <td style={{ ...tdStyle, color: 'var(--text-muted)', fontSize: '11px' }}>{new Date(item.date).toLocaleDateString('uz-UZ')}</td>
+                        <tr key={item.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', height: '45px', background: rowBg, transition: 'background 0.15s' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(124,58,237,0.07)'}
+                          onMouseLeave={e => e.currentTarget.style.background = rowBg}
+                        >
+                          {/* Sticky: Xodim nomi */}
+                          {selectedEmployeeId === 'all' && (
+                            <td style={{ ...tdStyle, ...stickyColStyle(0), background: 'var(--bg-base, #0d0d0f)', fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap', color: 'var(--primary-300)' }}>
+                              {item.user?.name || '—'}
+                            </td>
+                          )}
+                          {/* Sticky: Sana */}
+                          <td style={{ ...tdStyle, ...stickyColStyle(selectedEmployeeId === 'all' ? 120 : 0), background: 'var(--bg-base, #0d0d0f)', color: 'var(--text-muted)', fontSize: '11px', whiteSpace: 'nowrap' }}>
+                            {new Date(item.date).toLocaleDateString('uz-UZ')}
+                          </td>
                           <td style={{ ...tdStyle, textTransform: 'capitalize', fontWeight: 600 }}>{getDayName(item.date)}</td>
-                          <td style={{ ...tdStyle, fontWeight: 800 }}>{item.totalCalls}</td>
+                          <td style={{ ...tdStyle, fontWeight: 900, color: '#daa520' }}>{item.totalCalls}</td>
                           <td style={tdStyle}>{item.incomingCalls}</td>
                           <td style={tdStyle}>{item.outgoingCalls}</td>
-                          <td style={{ ...tdStyle, color: 'var(--primary-400)', fontWeight: 800 }}>{item.qualityLeads}</td>
-                          <td style={{ ...tdStyle, color: 'var(--danger-500)' }}>{item.nonQualityLeads}</td>
+                          <td style={{ ...tdStyle, color: '#32cd32', fontWeight: 800 }}>{item.qualityLeads}</td>
+                          <td style={{ ...tdStyle, color: '#dc143c' }}>{item.nonQualityLeads}</td>
                           
                           {/* Dynamic Funnel Row Data */}
                           {stages.map(stage => {
                             const ls = item.leadStatuses?.find(ls => ls.stageId === stage.id);
-                            return <td key={stage.id} style={{ ...tdStyle, fontWeight: 700 }}>{ls ? ls.count : 0}</td>;
+                            return <td key={stage.id} style={{ ...tdStyle, fontWeight: 700, color: 'var(--primary-400)' }}>{ls ? ls.count : 0}</td>;
                           })}
 
-                          <td style={{ ...tdStyle, color: 'var(--accent-blue)', fontWeight: 800 }}>{item.officeVisits}</td>
-                          <td style={{ ...tdStyle, color: 'var(--accent-teal)', fontWeight: 800 }}>{item.sales}</td>
+                          <td style={{ ...tdStyle, color: '#ff4500', fontWeight: 800 }}>{item.officeVisits}</td>
+                          <td style={{ ...tdStyle, color: '#00ced1', fontWeight: 800 }}>{item.sales}</td>
                           <td style={{ ...tdStyle, color: '#8b5cf6', fontWeight: 900 }}>{formatCurrency(item.revenue)}</td>
                           <td style={{ ...tdStyle, textAlign: 'right' }}>
                             <button 
                               onClick={() => handleEditClick(item)} 
-                              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px', borderRadius: '6px', transition: 'color 0.2s' }}
                               title="Tahrirlash"
+                              onMouseEnter={e => e.currentTarget.style.color = 'var(--primary-400)'}
+                              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
                             >
                               <ChevronRight size={16} />
                             </button>
@@ -443,17 +476,32 @@ export default function AdminReportsPage() {
 }
 
 const thStyle = {
-  padding: '16px 12px',
+  padding: '14px 12px',
   textAlign: 'left',
   fontSize: '10px',
   fontWeight: 900,
   textTransform: 'uppercase',
   color: 'var(--text-muted)',
-  letterSpacing: '0.5px'
+  letterSpacing: '0.5px',
+  whiteSpace: 'nowrap',
+  position: 'sticky',
+  top: 0,
+  zIndex: 20,
+  boxShadow: '0 2px 0 rgba(255,255,255,0.07)',
 };
 
 const tdStyle = {
-  padding: '12px',
+  padding: '10px 12px',
   fontSize: '12px',
-  color: 'var(--text-primary)'
+  color: 'var(--text-primary)',
+  whiteSpace: 'nowrap',
 };
+
+// Chapga yopishgan ustunlar uchun
+const stickyColStyle = (leftPx) => ({
+  position: 'sticky',
+  left: leftPx,
+  zIndex: 10,
+  boxShadow: '2px 0 6px rgba(0,0,0,0.4)',
+  borderRight: '1px solid rgba(255,255,255,0.06)',
+});
