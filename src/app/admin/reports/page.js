@@ -256,29 +256,30 @@ export default function AdminReportsPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1000px' }}>
                   <thead style={{ position: 'sticky', top: 0, zIndex: 30 }}>
                     <tr style={{ background: '#111114', borderBottom: '2px solid rgba(255,255,255,0.12)' }}>
-                      {/* Sticky left: Xodim */}
+                      {/* Sticky left+top corner: Xodim — zIndex:40 kerak (ham ustdan ham chapdan) */}
                       {selectedEmployeeId === 'all' && (
-                        <th style={{ ...thStyle, ...stickyColStyle(0), background: '#111114', minWidth: '120px' }}>Xodim</th>
+                        <th style={{ ...thStyle, ...stickyColStyle(0), zIndex: 40, background: '#111114', minWidth: '120px' }}>Xodim</th>
                       )}
-                      {/* Sticky left: Sana */}
-                      <th style={{ ...thStyle, ...stickyColStyle(selectedEmployeeId === 'all' ? 120 : 0), background: '#111114', minWidth: '90px' }}>Sana</th>
-                      <th style={{ ...thStyle, background: '#111114', minWidth: '90px' }}>Hafta kuni</th>
-                      <th style={{ ...thStyle, background: 'rgba(184, 134, 11, 0.25)', color: '#daa520' }}>Jami q-roq</th>
-                      <th style={{ ...thStyle, background: 'rgba(30, 144, 255, 0.15)', color: '#1e90ff' }}>Kiruvchi</th>
-                      <th style={{ ...thStyle, background: 'rgba(30, 144, 255, 0.15)', color: '#1e90ff' }}>Zadacha</th>
-                      <th style={{ ...thStyle, background: 'rgba(50, 205, 50, 0.15)', color: '#32cd32' }}>Sifatli</th>
-                      <th style={{ ...thStyle, background: 'rgba(220, 20, 60, 0.15)', color: '#dc143c' }}>Sifatsiz</th>
+                      {/* Sticky left+top corner: Sana — zIndex:40 */}
+                      <th style={{ ...thStyle, ...stickyColStyle(selectedEmployeeId === 'all' ? 120 : 0), zIndex: 40, background: '#111114', minWidth: '90px' }}>Sana</th>
+                      {/* Oddiy sticky-top ths — to'liq rang bilan (transparent bo'lmasin) */}
+                      <th style={{ ...thStyle, background: '#1a1a1f', minWidth: '90px' }}>Hafta kuni</th>
+                      <th style={{ ...thStyle, background: '#1f1c10', color: '#daa520' }}>Jami q-roq</th>
+                      <th style={{ ...thStyle, background: '#101520', color: '#1e90ff' }}>Kiruvchi</th>
+                      <th style={{ ...thStyle, background: '#101520', color: '#1e90ff' }}>Zadacha</th>
+                      <th style={{ ...thStyle, background: '#101510', color: '#32cd32' }}>Sifatli</th>
+                      <th style={{ ...thStyle, background: '#1a1010', color: '#dc143c' }}>Sifatsiz</th>
                       
                       {/* Dynamic Funnel Stages */}
                       {stages.map(stage => (
-                        <th key={stage.id} style={{ ...thStyle, background: 'rgba(124, 58, 237, 0.12)', color: 'var(--primary-400)', minWidth: '90px' }}>
+                        <th key={stage.id} style={{ ...thStyle, background: '#130f1e', color: 'var(--primary-400)', minWidth: '90px' }}>
                           {stage.name}
                         </th>
                       ))}
 
-                      <th style={{ ...thStyle, background: 'rgba(255, 69, 0, 0.15)', color: '#ff4500' }}>Ofis (K)</th>
-                      <th style={{ ...thStyle, background: 'rgba(0, 206, 209, 0.15)', color: '#00ced1' }}>Sotuv (T)</th>
-                      <th style={{ ...thStyle, background: 'rgba(138, 43, 226, 0.15)', color: '#8a2be2', minWidth: '120px' }}>Summa (UZS)</th>
+                      <th style={{ ...thStyle, background: '#1a1208', color: '#ff4500' }}>Ofis (K)</th>
+                      <th style={{ ...thStyle, background: '#0a1818', color: '#00ced1' }}>Sotuv (T)</th>
+                      <th style={{ ...thStyle, background: '#130a20', color: '#8a2be2', minWidth: '120px' }}>Summa (UZS)</th>
                       <th style={{ ...thStyle, background: '#111114' }}></th>
                     </tr>
                   </thead>
